@@ -5,6 +5,8 @@ import HeatmapForm from "./HeatmapForm";
 import TrafficHeatmapD3 from "./TrafficHeatmapD3";
 import CameraPreviewRow from "./CameraPreviewRow";
 import { ROUTE_IMAGES, ROUTE_DIRECTIONS } from "./RouteConfig";
+import districtBoundaryData from "./districtBoundary.json";
+
 
 const today = dayjs().format("YYYY-MM-DD");
 const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
@@ -22,6 +24,16 @@ const DEFAULT_FORM_STATE = {
   size: 2,
   timezone: "EST",
 };
+
+const DISTRICT_COLORS = {
+  'Crawfordsville': 'rgb(231, 239, 249)',
+  'Fort Wayne': 'rgb(207, 207, 207)',
+  'Greenfield': 'rgb(237, 255, 222)',
+  'La Porte': 'rgb(253, 233, 223)',
+  'Seymour': 'rgb(195, 196, 243)',
+  'Vincennes': 'rgb(244, 158, 170)',
+};
+
 
 
 
@@ -47,7 +59,9 @@ const HeatmapGenerator = () => {
   const [showExitLines, setShowExitLines] = useState(false);
   const [showTimeIndicators, setShowTimeIndicators] = useState(true);
   const [selectedMMs, setSelectedMMs] = useState([null, null, null]);
+  const [districtMode, setDistrictMode] = useState(0); // 0: off, 1: fill+lines, 2: lines
   const [currentGraphTime, setCurrentGraphTime] = useState(null);
+
 
   const [metaData, setMetaData] = useState({ cost: 0, bytes: 0 });
 
@@ -466,7 +480,9 @@ const HeatmapGenerator = () => {
       if (key === "B") setVisibleLayers((p) => ({ ...p, decel: !p.decel }));
       if (key === "L") setShowCameraLines((prev) => !prev);
       if (key === "E") setShowExitLines((prev) => !prev);
+      if (key === "R") setDistrictMode((prev) => (prev + 1) % 3);
       if (key === "S") setShowTimeIndicators((prev) => !prev);
+
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -559,7 +575,10 @@ const HeatmapGenerator = () => {
                 showCameraLines={showCameraLines}
                 exitLines={exitLines}
                 showExitLines={showExitLines}
+                districtBoundaryData={districtBoundaryData}
+                districtMode={districtMode}
                 showTimeIndicators={showTimeIndicators}
+
               >
                 {/* FOOTER */}
                 <div
@@ -569,17 +588,19 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["truck", "car", "accel", "decel", "lines", "exits"].map((k) => (
+                    {["truck", "car", "accel", "decel", "lines", "exits", "districts"].map((k) => (
                       <div
+
                         key={k}
                         className="d-flex align-items-center gap-2 flex-nowrap"
                       >
                         <kbd
-                          className={`badge ${k === "lines" || k === "exits"
-                            ? (k === "lines" ? showCameraLines : showExitLines)
+                          className={`badge ${k === "lines" || k === "exits" || k === "districts"
+                            ? (k === "lines" ? showCameraLines : k === "exits" ? showExitLines : districtMode > 0)
                               ? "bg-dark"
                               : "bg-secondary"
                             : visibleLayers[k]
+
                               ? k === "truck"
                                 ? "bg-primary"
                                 : k === "car"
@@ -598,11 +619,12 @@ const HeatmapGenerator = () => {
                                 ? "N"
                                 : k === "decel"
                                   ? "B"
-                                  : k === "lines" ? "L" : "E"}
+                                  : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
                         </kbd>
+
                         <span
                           className={
-                            (k === "lines" ? showCameraLines : k === "exits" ? showExitLines : visibleLayers[k])
+                            (k === "lines" ? showCameraLines : k === "exits" ? showExitLines : k === "districts" ? districtMode > 0 : visibleLayers[k])
                               ? "text-dark fw-semibold"
                               : "text-muted"
                           }
@@ -611,8 +633,11 @@ const HeatmapGenerator = () => {
                             ? "Cam Lines"
                             : k === "exits"
                               ? "Exit Lines"
-                              : k.charAt(0).toUpperCase() + k.slice(1)}
+                              : k === "districts"
+                                ? "Districts"
+                                : k.charAt(0).toUpperCase() + k.slice(1)}
                         </span>
+
                       </div>
                     ))}
                   </div>
@@ -664,6 +689,26 @@ const HeatmapGenerator = () => {
                       </div>
                     ))}
                   </div>
+
+                  {districtMode === 1 && districtBoundaryData[appliedFormState.route] && (
+                    <div className="d-flex align-items-center gap-3 flex-nowrap border-start ps-3">
+                      <span className="fw-semibold small">Districts:</span>
+                      {Object.keys(districtBoundaryData[appliedFormState.route]).map((name) => (
+                        <div key={name} className="d-flex align-items-center gap-2 flex-nowrap">
+                          <div
+                            style={{
+                              width: "14px",
+                              height: "14px",
+                              backgroundColor: DISTRICT_COLORS[name] || "#eee",
+                              border: "1px solid #ddd",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span className="small">{name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </TrafficHeatmapD3>
 

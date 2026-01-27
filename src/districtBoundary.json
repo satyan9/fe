@@ -1,0 +1,49 @@
+{
+    "I-64": {
+        "Seymour": {"sm":"92", "em": "124"},
+        "Vincennes": {"sm":"0", "em": "92"}
+    },
+    "I-65": {
+        "Crawfordsville": {"sm":"130", "em": "201"},
+        "Greenfield": {"sm":"101", "em": "130"},
+        "La Porte": {"sm":"201", "em": "262"},
+        "Seymour": {"sm":"0", "em": "101"}
+    },
+    "I-69": {
+        "Vincennes": {"sm":"0", "em": "104"},
+        "Seymour": {"sm":"104", "em": "158"},
+        "Greenfield": {"sm":"158", "em": "255"},
+        "Fort Wayne": {"sm":"255", "em": "357"}
+    },
+    "I-70": {
+        "Crawfordsville": {"sm":"0", "em": "69"},
+        "Greenfield": {"sm":"69", "em": "157"}
+    },
+    "I-74": {
+        "Crawfordsville": {"sm":"0", "em": "73"},
+        "Greenfield": {"sm":"73", "em": "123"},
+        "Seymour": {"sm":"123", "em": "171"}
+    },
+    "I-90": {
+        "Fort Wayne": {"sm":"87", "em": "156"},
+        "La Porte": {"sm":"0", "em": "87"}
+    },
+    "I-94": {
+        "La Porte": {"sm":"0", "em": "46"}
+    },
+    "I-265": {
+        "Seymour": {"sm":"0", "em": "13"}
+    },
+    "I-275": {
+        "Seymour": {"sm":"0", "em": "3"}
+    },
+    "I-465": {
+        "Greenfield": {"sm":"0", "em": "53"}
+    },
+    "I-469": {
+        "Fort Wayne": {"sm":"0", "em": "31"}
+    },
+    "I-865": {
+        "Greenfield": {"sm":"0", "em": "5"}
+    }
+}
