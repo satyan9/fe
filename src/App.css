@@ -1,0 +1,225 @@
+
+
+/* Reset for box model to include padding/border in element's total width and height */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Set up the main container to take full viewport height and enable a flex layout */
+/* Assumes this is the root element or is within a full-height body/html structure */
+.heatmap-wrapper {
+  display: flex;
+  flex-direction: column; /* Stacks children vertically: Title, Form, Display, Legend */ /* Take full height of the viewport */
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background-color: #f0f0f0; /* Light background for the whole page */
+  overflow: hidden; /* Prevent body scroll, as content will scroll within .scroll-container */
+}
+
+.title {
+  margin-bottom: 10px;
+  color: #333;
+  text-align: center;
+}
+
+/* --- Form Styles --- */
+
+form {
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group {
+  display: flex;
+  flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+  gap: 15px; /* Spacing between form items */
+  align-items: flex-end; /* Aligns items at the bottom */
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-item label {
+  font-size: 0.8rem;
+  color: #555;
+  margin-bottom: 2px;
+  font-weight: bold;
+}
+
+.form-item input[type="datetime-local"],
+.form-item input[type="number"],
+.form-item select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 150px; /* Standardize width for date/number/select fields */
+}
+
+/* Specific styling for the road select */
+.form-item select {
+  width: 100px;
+}
+
+button[type="submit"] {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  align-self: flex-end; /* Aligns the button with the bottom of the group */
+}
+
+button[type="submit"]:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+button[type="submit"]:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* --- Filter Status & Error Messages --- */
+
+#filter-status {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+#filter-status kbd {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-family: monospace;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+/* --- Heatmap Display Container (Critical for full screen and scrolling) --- */
+
+.scroll-container {
+  flex-grow: 1; /* **IMPORTANT:** Makes this container take up all remaining vertical space */
+  overflow: auto; /* **IMPORTANT:** Adds scrollbars (both x and y) if content exceeds container size */
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px; /* Slight padding inside the scrollable area */
+}
+
+.result-wrapper {
+  /* No specific size here, its content will define its size, and the parent will handle overflow */
+  position: relative; /* Needed for absolute positioning of layers */
+  min-width: fit-content; /* Ensure the wrapper doesn't shrink smaller than its content */
+  min-height: 75vh;
+}
+
+/* The inner div containing the images - ensures all layers stack correctly */
+#result {
+  position: relative;
+  /* Size will be determined by the dimensions of the images, e.g., 400x300 */
+}
+
+.heatmap-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Image dimensions are controlled by the `width` and `height` form inputs */
+  transition: opacity 0.3s ease-in-out;
+  /* Use filter or opacity for visibility toggle, opacity is simpler */
+}
+
+.heatmap-layer.visible {
+  opacity: 1;
+  z-index: 10; /* Ensure visible layer is on top */
+}
+
+.heatmap-layer.hidden {
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none; /* Prevents interaction with hidden layers */
+}
+
+/* --- Legend Styles (Mimicking the image) --- */
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  padding: 10px 0;
+  border-top: 1px solid #ccc;
+  margin-top: 10px;
+  background-color: #fff;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.legend-color-box {
+  width: 15px;
+  height: 15px;
+  margin-right: 5px;
+  border: 1px solid #555; /* Add a border for visibility on white background */
+}
+
+/* --- Navigation Arrows --- */
+.nav-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid #007bff;
+  background-color: #fff;
+  color: #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.nav-arrow:hover {
+  background-color: #007bff;
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.nav-arrow:active {
+  transform: scale(0.95);
+}
+
+.nav-arrow i {
+  line-height: 1;
+}
