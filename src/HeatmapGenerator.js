@@ -438,20 +438,20 @@ const HeatmapGenerator = () => {
       Object.keys(params).forEach((key) => {
         // If we have route params matching keys in state
         if (newState.hasOwnProperty(key)) {
-          const value = params[key];
-          // let value = params[key];
+         // const value = params[key];
+          let value = params[key];
 
-          // // Support keyword dates like 'today' or 'today-1'
-          // if ((key === "start_date" || key === "end_date") && value) {
-          //   if (value === "today") {
-          //     value = dayjs().format("YYYY-MM-DD");
-          //   } else if (value.startsWith("today-")) {
-          //     const days = parseInt(value.split("-")[1], 10);
-          //     if (!isNaN(days)) {
-          //       value = dayjs().subtract(days, "day").format("YYYY-MM-DD");
-          //     }
-          //   }
-          // }
+          // Support keyword dates like 'today' or 'today-1'
+          if ((key === "start_date" || key === "end_date") && value) {
+            if (value === "today") {
+              value = dayjs().format("YYYY-MM-DD");
+            } else if (value.startsWith("today-")) {
+              const days = parseInt(value.split("-")[1], 10);
+              if (!isNaN(days)) {
+                value = dayjs().subtract(days, "day").format("YYYY-MM-DD");
+              }
+            }
+          }
 
           const isNum = ["start_mm", "end_mm"].includes(key);
           newState[key] = isNum ? parseFloat(value) || 0 : value;
