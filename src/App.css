@@ -223,3 +223,8 @@ button[type="submit"]:disabled {
 .nav-arrow i {
   line-height: 1;
 }
+
+.bg-brown {
+  background-color: #b68e72 !important;
+  color: white !important;
+}

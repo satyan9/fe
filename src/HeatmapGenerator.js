@@ -70,6 +70,7 @@ const HeatmapGenerator = () => {
     truck: true,
     accel: false,
     decel: false,
+    vizzion: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -269,7 +270,7 @@ const HeatmapGenerator = () => {
       .catch((err) => console.error("Error fetching cameras:", err));
 
     // Fetch Exit Lines
-    const exitLinesUrl = `http://localhost:5000/get_exit_lines?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
+    const exitLinesUrl = `http://localhost:5000/get_exit_line?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
     fetch(exitLinesUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -283,7 +284,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["car", "truck", "events"];
+    const types = ["car", "truck", "events", "vizzion"];
 
     // setProgress({ completed: 0, total: totalTasks });
 
@@ -366,6 +367,16 @@ const HeatmapGenerator = () => {
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
                 const url = `http://localhost:5000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
+              } else if (type === "vizzion") {
+                const formData = new FormData();
+                formData.append("state", state);
+                formData.append("start_date", chunkStart);
+                formData.append("end_date", chunkEnd);
+                formData.append("route", route);
+                formData.append("start_mm", start_mm);
+                formData.append("end_mm", end_mm);
+                formData.append("timezone", stateToUse.timezone);
+                await processResponse(formData);
               } else {
                 // Events
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -438,7 +449,7 @@ const HeatmapGenerator = () => {
       Object.keys(params).forEach((key) => {
         // If we have route params matching keys in state
         if (newState.hasOwnProperty(key)) {
-         // const value = params[key];
+          // const value = params[key];
           let value = params[key];
 
           // Support keyword dates like 'today' or 'today-1'
@@ -482,7 +493,7 @@ const HeatmapGenerator = () => {
       if (key === "E") setShowExitLines((prev) => !prev);
       if (key === "R") setDistrictMode((prev) => (prev + 1) % 3);
       if (key === "S") setShowTimeIndicators((prev) => !prev);
-
+      if (key === "Z") setVisibleLayers((p) => ({ ...p, vizzion: !p.vizzion }));
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -588,7 +599,7 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["truck", "car", "accel", "decel", "lines", "exits", "districts"].map((k) => (
+                    {["truck", "car", "accel", "decel", "vizzion", "lines"].map((k) => ( //"exits", "districts"
                       <div
 
                         key={k}
@@ -607,7 +618,11 @@ const HeatmapGenerator = () => {
                                   ? "bg-success"
                                   : k === "accel"
                                     ? "bg-warning"
-                                    : "bg-danger"
+                                    : k === "decel"
+                                      ? "bg-danger"
+                                      : k === "vizzion"
+                                        ? "bg-brown"
+                                        : "bg-secondary"
                               : "bg-secondary"
                             } fs-6 px-3 py-2`}
                         >
@@ -619,7 +634,9 @@ const HeatmapGenerator = () => {
                                 ? "N"
                                 : k === "decel"
                                   ? "B"
-                                  : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
+                                  : k === "vizzion"
+                                    ? "Z"
+                                    : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
                         </kbd>
 
                         <span
@@ -633,9 +650,11 @@ const HeatmapGenerator = () => {
                             ? "Cam Lines"
                             : k === "exits"
                               ? "Exit Lines"
-                              : k === "districts"
-                                ? "Districts"
-                                : k.charAt(0).toUpperCase() + k.slice(1)}
+                              : k === "vizzion"
+                                ? "Vizzion Drives"
+                                : k === "districts"
+                                  ? "Districts"
+                                  : k.charAt(0).toUpperCase() + k.slice(1)}
                         </span>
 
                       </div>
@@ -689,8 +708,8 @@ const HeatmapGenerator = () => {
                       </div>
                     ))}
                   </div>
-
-                  {districtMode === 1 && districtBoundaryData[appliedFormState.route] && (
+                  {/* boundary color data print */}
+                  {/* {districtMode === 1 && districtBoundaryData[appliedFormState.route] && (
                     <div className="d-flex align-items-center gap-3 flex-nowrap border-start ps-3">
                       <span className="fw-semibold small">Districts:</span>
                       {Object.keys(districtBoundaryData[appliedFormState.route]).map((name) => (
@@ -708,7 +727,7 @@ const HeatmapGenerator = () => {
                         </div>
                       ))}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </TrafficHeatmapD3>
 
