@@ -153,7 +153,7 @@ const TrafficHeatmapD3 = forwardRef(({
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
               ctx.beginPath();
-              ctx.arc(cx, cy, 1, 0, 2 * Math.PI);// change the size of the circle here
+              ctx.arc(cx, cy, 2, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
             } else {
               // Accel/Decel

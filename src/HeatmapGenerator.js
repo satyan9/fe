@@ -368,11 +368,12 @@ const HeatmapGenerator = () => {
                 const url = `http://localhost:5000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "vizzion") {
+                const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const formData = new FormData();
                 formData.append("state", state);
                 formData.append("start_date", chunkStart);
                 formData.append("end_date", chunkEnd);
-                formData.append("route", route);
+                formData.append("direction", `${formattedRoute} ${dir}`);
                 formData.append("start_mm", start_mm);
                 formData.append("end_mm", end_mm);
                 formData.append("timezone", stateToUse.timezone);
