@@ -71,6 +71,7 @@ const HeatmapGenerator = () => {
     accel: false,
     decel: false,
     vizzion: false,
+    inrix: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -284,7 +285,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["car", "truck", "events", "vizzion"];
+    const types = ["inrix", "car", "truck", "events", "vizzion"];
 
     // setProgress({ completed: 0, total: totalTasks });
 
@@ -366,6 +367,14 @@ const HeatmapGenerator = () => {
                   .format("YYYY-MM-DD");
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
                 const url = `http://localhost:5000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                await processResponse(null, url);
+              } else if (type === "inrix") {
+                const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
+                const { timezone } = stateToUse;
+                const endDatePayload = dayjs(chunkEnd)
+                  .add(1, "day")
+                  .format("YYYY-MM-DD");
+                const url = `http://localhost:5000/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "vizzion") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -495,6 +504,7 @@ const HeatmapGenerator = () => {
       if (key === "R") setDistrictMode((prev) => (prev + 1) % 3);
       if (key === "S") setShowTimeIndicators((prev) => !prev);
       if (key === "Z") setVisibleLayers((p) => ({ ...p, vizzion: !p.vizzion }));
+      if (key === "G") setVisibleLayers((p) => ({ ...p, inrix: !p.inrix }));
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -600,7 +610,7 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["truck", "car", "accel", "decel", "vizzion", "lines"].map((k) => ( //"exits", "districts"
+                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "lines"].map((k) => ( //"exits", "districts"
                       <div
 
                         key={k}
@@ -623,7 +633,9 @@ const HeatmapGenerator = () => {
                                       ? "bg-danger"
                                       : k === "vizzion"
                                         ? "bg-brown"
-                                        : "bg-secondary"
+                                        : k === "inrix"
+                                          ? "bg-info"
+                                          : "bg-secondary"
                               : "bg-secondary"
                             } fs-6 px-3 py-2`}
                         >
@@ -637,7 +649,9 @@ const HeatmapGenerator = () => {
                                   ? "B"
                                   : k === "vizzion"
                                     ? "Z"
-                                    : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
+                                    : k === "inrix"
+                                      ? "G"
+                                      : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
                         </kbd>
 
                         <span
@@ -653,9 +667,11 @@ const HeatmapGenerator = () => {
                               ? "Exit Lines"
                               : k === "vizzion"
                                 ? "Vizzion Drives"
-                                : k === "districts"
-                                  ? "Districts"
-                                  : k.charAt(0).toUpperCase() + k.slice(1)}
+                                : k === "inrix"
+                                  ? "Inrix Data"
+                                  : k === "districts"
+                                    ? "Districts"
+                                    : k.charAt(0).toUpperCase() + k.slice(1)}
                         </span>
 
                       </div>

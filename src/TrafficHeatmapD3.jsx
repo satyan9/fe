@@ -56,6 +56,7 @@ const TrafficHeatmapD3 = forwardRef(({
   const accelCanvasRef = useRef();
   const decelCanvasRef = useRef();
   const vizzionCanvasRef = useRef();
+  const inrixCanvasRef = useRef();
 
   const svgRef = useRef();
   const sliderTrackRef = useRef();
@@ -107,6 +108,7 @@ const TrafficHeatmapD3 = forwardRef(({
     if (type === 'accel') return accelCanvasRef.current?.getContext('2d');
     if (type === 'decel') return decelCanvasRef.current?.getContext('2d');
     if (type === 'vizzion') return vizzionCanvasRef.current?.getContext('2d');
+    if (type === 'inrix') return inrixCanvasRef.current?.getContext('2d');
     return null;
   }, []);
 
@@ -138,7 +140,7 @@ const TrafficHeatmapD3 = forwardRef(({
             if (!ctx) return;
 
             // We draw regardless of 'visibleLayers' here. Visibility is handled by CSS.
-            if (d.event_type === 'car' || d.event_type === 'truck') {
+            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'inrix') {
               ctx.fillStyle = getColor(d.mph);
               const x = xOffset + hourScale(d.decimalHour);
               const y = yOffset + yScale(d.mm);
@@ -213,6 +215,7 @@ const TrafficHeatmapD3 = forwardRef(({
     const ctxAccel = setupCanvas(accelCanvasRef);
     const ctxDecel = setupCanvas(decelCanvasRef);
     const ctxVizzion = setupCanvas(vizzionCanvasRef);
+    const ctxInrix = setupCanvas(inrixCanvasRef);
 
     const rectH = dynamicRectH;
 
@@ -493,10 +496,11 @@ const TrafficHeatmapD3 = forwardRef(({
             else if (d.event_type === 'accel') ctx = ctxAccel;
             else if (d.event_type === 'decel') ctx = ctxDecel;
             else if (d.event_type === 'vizzion') ctx = ctxVizzion;
+            else if (d.event_type === 'inrix') ctx = ctxInrix;
 
             if (!ctx) return;
 
-            if (d.event_type === 'car' || d.event_type === 'truck') {
+            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'inrix') {
               ctx.fillStyle = getColor(d.mph);
               const x = xOffset + hourScale(d.decimalHour);
               const y = yOffset + yScale(d.mm);
@@ -674,6 +678,9 @@ const TrafficHeatmapD3 = forwardRef(({
 
             {/* LAYER V: VIZZION (Brown) */}
             <canvas ref={vizzionCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 4, display: visibleLayers.vizzion ? 'block' : 'none' }} />
+
+            {/* LAYER I: INRIX (Speed Colors) */}
+            <canvas ref={inrixCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1, display: visibleLayers.inrix ? 'block' : 'none' }} />
 
             {/* LAYER 5: SVG (Axes, Grid, Interaction) */}
             <svg ref={svgRef} style={{ position: "absolute", top: 0, left: 0, zIndex: 5 }} />
