@@ -133,6 +133,23 @@ const TrafficHeatmapD3 = forwardRef(({
 
           const yOffset = rowIdx * rowFullHeight + margin.top;
           const cellData = newChunkMap[dayStr][dir];
+          // Define all available contexts to apply clipping
+          const ctxs = [
+            carCanvasRef.current?.getContext('2d'),
+            truckCanvasRef.current?.getContext('2d'),
+            accelCanvasRef.current?.getContext('2d'),
+            decelCanvasRef.current?.getContext('2d'),
+            vizzionCanvasRef.current?.getContext('2d'),
+            inrixCanvasRef.current?.getContext('2d'),
+          ].filter(Boolean);
+
+          // Apply clipping to each canvas for this specific cell
+          ctxs.forEach(ctx => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(xOffset, yOffset, chartWidth, chartHeight);
+            ctx.clip();
+          });
 
           // Draw pixels immediately to the specific canvas layer
           cellData.forEach(d => {
@@ -168,6 +185,9 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.stroke();
             }
           });
+
+          // Restore state (remove clipping) for next chunks
+          ctxs.forEach(ctx => ctx.restore());
         });
       });
     }
@@ -487,8 +507,18 @@ const TrafficHeatmapD3 = forwardRef(({
           const yOffset = rowIdx * rowFullHeight + margin.top;
           const cellData = groupedData[dayStr][dir];
 
+          // Define all available contexts to apply clipping
+          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix].filter(Boolean);
+
+          // Apply clipping to each canvas for this specific cell
+          ctxs.forEach(ctx => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(xOffset, yOffset, chartWidth, chartHeight);
+            ctx.clip();
+          });
+
           // Iterate and draw to specific canvases
-          // No visibility checks here! We strictly draw data to its layer.
           cellData.forEach(d => {
             let ctx = null;
             if (d.event_type === 'car') ctx = ctxCar;
@@ -526,6 +556,9 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.stroke();
             }
           });
+
+          // Restore state (remove clipping)
+          ctxs.forEach(ctx => ctx.restore());
         });
       });
     }
