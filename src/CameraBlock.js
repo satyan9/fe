@@ -22,7 +22,7 @@ const CameraBlock = ({ mm, route, timestamp, color, allMMs, onMMChange, state })
       const mileParam = parseFloat(mm).toFixed(1);
 
       // Ensure this URL matches your backend
-      const url = `http://localhost:5000/get-images?timestamp=${formattedTime}&road=${route}&mile=${mileParam}&state=${state || 'IN'}`;
+      const url = `https://tmc-backend-v1-607020806390.us-central1.run.app/get-images?timestamp=${formattedTime}&road=${route}&mile=${mileParam}&state=${state || 'IN'}`;
 
       fetch(url)
         .then((res) => res.json())
