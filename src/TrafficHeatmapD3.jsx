@@ -172,8 +172,9 @@ const TrafficHeatmapD3 = forwardRef(({
             } else if (d.event_type === 'vizzion') {
               // Vizzion Drives: conditional color
               let color = "gray";
-              if (d.val === 1) color = "blue";
-              else if (d.val >= 2) color = "brown";
+              if (d.val === 1) color = "black";
+              else if (d.val === 2) color = "blue";
+              else if (d.val >= 3) color = "brown";
 
               ctx.fillStyle = color;
               const cx = xOffset + hourScale(d.decimalHour);
