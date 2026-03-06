@@ -170,12 +170,16 @@ const TrafficHeatmapD3 = forwardRef(({
               // Center the rectangle on the time bin and mile marker
               ctx.fillRect(x, y - (actualRectH / 2), actualRectW, actualRectH);
             } else if (d.event_type === 'vizzion') {
-              // Vizzion Drives: brown circles, fixed size 3
-              ctx.fillStyle = "gray";
+              // Vizzion Drives: conditional color
+              let color = "gray";
+              if (d.val === 1) color = "blue";
+              else if (d.val >= 2) color = "brown";
+
+              ctx.fillStyle = color;
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
               ctx.beginPath();
-              ctx.arc(cx, cy, 2, 0, 2 * Math.PI);// change the size of the circle here
+              ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
             } else {
               // Accel/Decel
@@ -545,7 +549,11 @@ const TrafficHeatmapD3 = forwardRef(({
               // Center the rectangle on the time bin and mile marker
               ctx.fillRect(x, y - (actualRectH / 2), actualRectW, actualRectH);
             } else if (d.event_type === 'vizzion') {
-              ctx.fillStyle = "brown";
+              let color = "gray";
+              if (d.val === 1) color = "blue";
+              else if (d.val >= 2) color = "brown";
+
+              ctx.fillStyle = color;
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
               ctx.beginPath();
