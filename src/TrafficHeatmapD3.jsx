@@ -16,14 +16,14 @@ const SPEED_COLORS = [
 const COLOR_GREATER_65 = "rgb(204, 255, 153)"; // >65
 const COLOR_NO_DATA = "rgb(238, 238, 238)";    // No Data
 
-const DISTRICT_COLORS = {
-  'Crawfordsville': 'rgb(231, 239, 249)',
-  'Fort Wayne': 'rgb(207, 207, 207)',
-  'Greenfield': 'rgb(237, 255, 222)',
-  'La Porte': 'rgb(253, 233, 223)',
-  'Seymour': 'rgb(195, 196, 243)',
-  'Vincennes': 'rgb(244, 158, 170)',
-};
+// const DISTRICT_COLORS = {
+//   'Crawfordsville': 'rgb(231, 239, 249)',
+//   'Fort Wayne': 'rgb(207, 207, 207)',
+//   'Greenfield': 'rgb(237, 255, 222)',
+//   'La Porte': 'rgb(253, 233, 223)',
+//   'Seymour': 'rgb(195, 196, 243)',
+//   'Vincennes': 'rgb(244, 158, 170)',
+// };
 
 // Removed hardcoded ROUTE_DIRECTIONS_IN in favor of RouteConfig
 
@@ -62,6 +62,7 @@ const TrafficHeatmapD3 = forwardRef(({
 
   const svgRef = useRef();
   const sliderTrackRef = useRef();
+  const crashPointsRef = useRef([]); // Store crash points for hover detection
 
   // Store drawing context (scales, dims) to use in imperative handle
   const drawContextRef = useRef(null);
@@ -122,7 +123,7 @@ const TrafficHeatmapD3 = forwardRef(({
       const dCtx = drawContextRef.current;
       if (!dCtx || !newChunkMap) return;
 
-      const { days, directions, chartWidth, yScale, margin, rowFullHeight, rectH, baseRectWidth } = dCtx;
+      const { days, directions, chartWidth, chartHeight, yScale, margin, rowFullHeight, rectH, baseRectWidth } = dCtx;
 
       Object.keys(newChunkMap).forEach(dayStr => {
         const dayIndex = days.findIndex(d => d.format("YYYY-MM-DD") === dayStr);
@@ -201,6 +202,15 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, crashSize || 4, 0, 2 * Math.PI);
               ctx.fill();
               ctx.stroke();
+
+              // Store for hover detection
+              crashPointsRef.current.push({
+                x: cx,
+                y: cy,
+                mrn: d.mrn,
+                mm: d.mm,
+                time: d.dateObj || new Date(d.local_bin * 1000)
+              });
             } else {
               // Accel/Decel
               ctx.strokeStyle = d.event_type === 'accel' ? "blue" : "black";
@@ -218,7 +228,7 @@ const TrafficHeatmapD3 = forwardRef(({
         });
       });
     }
-  }), [pointSize, getContextByType]);
+  }), [pointSize, crashSize, dimensions.chartHeight, getContextByType]);
 
   // 4. MAIN RENDER EFFECT
   useEffect(() => {
@@ -241,6 +251,8 @@ const TrafficHeatmapD3 = forwardRef(({
     svg.selectAll("*").remove();
     svg.attr("width", totalWidth).attr("height", totalHeight - sliderHeight);
     svg.style("cursor", "none");
+
+    crashPointsRef.current = []; // Clear crash points on re-draw
 
     // --- SETUP CANVASES ---
     const dpr = window.devicePixelRatio || 1;
@@ -498,19 +510,37 @@ const TrafficHeatmapD3 = forwardRef(({
           .attr("fill", "transparent")
           .on("mousemove", (event) => {
             const [px, py] = d3.pointer(event);
+            const globalX = px + xOffset;
+            const globalY = py + yOffset;
             const hoveredDate = xScale.invert(px);
             const hoveredMM = yScale.invert(py);
             cursorCircle.attr("cx", px).attr("cy", py).style("opacity", 1);
+
             const formatTimeUTC = (date) => {
               const h = date.getUTCHours().toString().padStart(2, '0');
               const m = date.getUTCMinutes().toString().padStart(2, '0');
               return `${h}:${m}`;
             };
+
+            let content = ` ${formatTimeUTC(hoveredDate)} |  ${hoveredMM.toFixed(1)}`;
+
+            // Check if hovering near a crash point
+            const hoverThreshold = 10; // pixels
+            const nearbyCrash = crashPointsRef.current.find(cp => {
+              const dx = globalX - cp.x;
+              const dy = globalY - cp.y;
+              return Math.sqrt(dx * dx + dy * dy) < hoverThreshold;
+            });
+
+            if (nearbyCrash) {
+              content += ` | MRN: ${nearbyCrash.mrn || 'N/A'}`;
+            }
+
             setTooltip({
               visible: true,
               x: event.clientX + 15,
               y: event.clientY - 15,
-              content: `MM: ${hoveredMM.toFixed(1)} | Time: ${formatTimeUTC(hoveredDate)}`
+              content: content
             });
           })
           .on("mouseout", () => {
@@ -597,6 +627,15 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, crashSize || 4, 0, 2 * Math.PI);
               ctx.fill();
               ctx.stroke();
+
+              // Store for hover detection
+              crashPointsRef.current.push({
+                x: cx,
+                y: cy,
+                mrn: d.mrn,
+                mm: d.mm,
+                time: d.dateObj || new Date(d.local_bin * 1000)
+              });
             } else {
               ctx.strokeStyle = d.event_type === 'accel' ? "blue" : "black";
               ctx.lineWidth = 2;
@@ -615,7 +654,7 @@ const TrafficHeatmapD3 = forwardRef(({
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gridLayout, dimensions, startMM, endMM, pointSize, cameraLocations, exitLines, dataVersion, districtBoundaryData]);
+  }, [gridLayout, dimensions, startMM, endMM, pointSize, crashSize, cameraLocations, exitLines, dataVersion, districtBoundaryData]);
   // REMOVED `showCameraLines`, `showExitLines`, `districtMode` from dependency array
 
 

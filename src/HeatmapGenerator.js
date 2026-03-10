@@ -143,6 +143,7 @@ const HeatmapGenerator = () => {
         local_bin: row.bin,
         normalizedDir: dir,
         val: row.val,
+        mrn: row.mrn,
       });
     }
     return map;
