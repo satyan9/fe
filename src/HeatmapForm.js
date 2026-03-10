@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { ROUTE_OPTIONS, ROUTE_IMAGES, ROUTE_MM_LIMITS } from "./RouteConfig";
 
 
-const STATE_OPTIONS = ["IN", "AR", "AL", "AZ", "CA", "CO", "CT", "DC", "DE","FL", "GA", "HI", "IA", "ID", "IL", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"];
+const STATE_OPTIONS = ["IN", "AR", "AL", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"];
 // const STATE_OPTIONS = ["IN","IL"]
 const HeatmapForm = ({
   draftFormState,
@@ -340,6 +340,19 @@ const HeatmapForm = ({
                 className="form-control form-control-sm"
                 style={{ fontSize: "0.8rem" }}
                 value={draftFormState.size}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            {/* crash size */}
+            <div className="col">
+              <label className="form-label fw-semibold mb-1" style={{ fontSize: "0.8rem" }}>Crash Size</label>
+              <input
+                type="number"
+                id="crash_size"
+                className="form-control form-control-sm"
+                style={{ fontSize: "0.8rem" }}
+                value={draftFormState.crash_size}
                 onChange={handleInputChange}
               />
             </div>

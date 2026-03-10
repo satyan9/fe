@@ -22,6 +22,7 @@ const DEFAULT_FORM_STATE = {
   width: 400,
   height: 300,
   size: 2,
+  crash_size: 2,
   timezone: "EST",
 };
 
@@ -73,6 +74,7 @@ const HeatmapGenerator = () => {
     vizzion: false,
     inrix: true,
     poly: false,
+    crash: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -287,7 +289,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["inrix", "car", "truck", "events", "vizzion", "poly"];
+    const types = ["inrix", "car", "truck", "events", "vizzion", "poly", "crash"];
 
     // setProgress({ completed: 0, total: totalTasks });
 
@@ -393,6 +395,18 @@ const HeatmapGenerator = () => {
                 formData.append("start_date", chunkStart);
                 formData.append("end_date", chunkEnd);
                 formData.append("direction", `${formattedRoute} ${dir}`);
+                formData.append("start_mm", start_mm);
+                formData.append("end_mm", end_mm);
+                formData.append("timezone", stateToUse.timezone);
+                await processResponse(formData);
+              } else if (type === "crash") {
+                const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
+                const formData = new FormData();
+                formData.append("state", state);
+                formData.append("start_date", chunkStart);
+                formData.append("end_date", chunkEnd);
+                formData.append("direction", `${formattedRoute} ${dir}`);
+                formData.append("route", route);
                 formData.append("start_mm", start_mm);
                 formData.append("end_mm", end_mm);
                 formData.append("timezone", stateToUse.timezone);
@@ -516,6 +530,7 @@ const HeatmapGenerator = () => {
       if (key === "Z") setVisibleLayers((p) => ({ ...p, vizzion: !p.vizzion }));
       if (key === "G") setVisibleLayers((p) => ({ ...p, inrix: !p.inrix }));
       if (key === "F") setVisibleLayers((p) => ({ ...p, poly: !p.poly }));
+      if (key === "C") setVisibleLayers((p) => ({ ...p, crash: !p.crash }));
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -600,6 +615,7 @@ const HeatmapGenerator = () => {
                 width={appliedFormState.width}
                 height={appliedFormState.height}
                 pointSize={appliedFormState.size}
+                crashSize={appliedFormState.crash_size}
                 visibleLayers={visibleLayers}
                 selectedMMs={selectedMMs}
                 onTimeChange={setCurrentGraphTime}
@@ -621,7 +637,7 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines"].map((k) => ( //"exits", "districts"
+                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "crash", "lines"].map((k) => ( //"exits", "districts"
                       <div
 
                         key={k}
@@ -648,7 +664,9 @@ const HeatmapGenerator = () => {
                                           ? "bg-info"
                                           : k === "poly"
                                             ? "bg-purple"
-                                            : "bg-secondary"
+                                            : k === "crash"
+                                              ? "bg-dark"
+                                              : "bg-secondary"
                               : "bg-secondary"
                             } fs-6 px-3 py-2`}
                         >
@@ -666,7 +684,9 @@ const HeatmapGenerator = () => {
                                       ? "G"
                                       : k === "poly"
                                         ? "F"
-                                        : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
+                                        : k === "crash"
+                                          ? "C"
+                                          : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
                         </kbd>
 
                         <span
@@ -686,9 +706,11 @@ const HeatmapGenerator = () => {
                                   ? "Inrix Data"
                                   : k === "poly"
                                     ? "Poly XD Data"
-                                    : k === "districts"
-                                      ? "Districts"
-                                      : k.charAt(0).toUpperCase() + k.slice(1)}
+                                    : k === "crash"
+                                      ? "Crash Data"
+                                      : k === "districts"
+                                        ? "Districts"
+                                        : k.charAt(0).toUpperCase() + k.slice(1)}
                         </span>
 
                       </div>

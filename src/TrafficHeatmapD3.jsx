@@ -38,7 +38,7 @@ const getColor = (mph) => {
 const TrafficHeatmapD3 = forwardRef(({
   groupedData = {}, state = "IN", startDate, endDate, route, startMM, endMM,
 
-  width, height, pointSize, visibleLayers,
+  width, height, pointSize, crashSize, visibleLayers,
   selectedMMs = [], onTimeChange, selectedTime,
   showCameraLines = false, showTimeIndicators = true,
   cameraLocations = [],
@@ -58,6 +58,7 @@ const TrafficHeatmapD3 = forwardRef(({
   const vizzionCanvasRef = useRef();
   const inrixCanvasRef = useRef();
   const polyCanvasRef = useRef();
+  const crashCanvasRef = useRef();
 
   const svgRef = useRef();
   const sliderTrackRef = useRef();
@@ -111,6 +112,7 @@ const TrafficHeatmapD3 = forwardRef(({
     if (type === 'vizzion') return vizzionCanvasRef.current?.getContext('2d');
     if (type === 'inrix') return inrixCanvasRef.current?.getContext('2d');
     if (type === 'poly') return polyCanvasRef.current?.getContext('2d');
+    if (type === 'crash') return crashCanvasRef.current?.getContext('2d');
     return null;
   }, []);
 
@@ -144,6 +146,7 @@ const TrafficHeatmapD3 = forwardRef(({
             vizzionCanvasRef.current?.getContext('2d'),
             inrixCanvasRef.current?.getContext('2d'),
             polyCanvasRef.current?.getContext('2d'),
+            crashCanvasRef.current?.getContext('2d'),
           ].filter(Boolean);
 
           // Apply clipping to each canvas for this specific cell
@@ -182,6 +185,22 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.beginPath();
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
+            } else if (d.event_type === 'crash') {
+              let color = "white";
+              if (d.val === "PI") color = "grey";
+              else if (d.val === "FATAL") color = "black";
+
+              ctx.fillStyle = color;
+              ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+              ctx.lineWidth = 1;
+
+              const cx = xOffset + hourScale(d.decimalHour);
+              const cy = yOffset + yScale(d.mm);
+
+              ctx.beginPath();
+              ctx.arc(cx, cy, crashSize || 4, 0, 2 * Math.PI);
+              ctx.fill();
+              ctx.stroke();
             } else {
               // Accel/Decel
               ctx.strokeStyle = d.event_type === 'accel' ? "blue" : "black";
@@ -245,6 +264,7 @@ const TrafficHeatmapD3 = forwardRef(({
     const ctxVizzion = setupCanvas(vizzionCanvasRef);
     const ctxInrix = setupCanvas(inrixCanvasRef);
     const ctxPoly = setupCanvas(polyCanvasRef);
+    const ctxCrash = setupCanvas(crashCanvasRef);
 
     const rectH = dynamicRectH;
 
@@ -517,7 +537,7 @@ const TrafficHeatmapD3 = forwardRef(({
           const cellData = groupedData[dayStr][dir];
 
           // Define all available contexts to apply clipping
-          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly].filter(Boolean);
+          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly, ctxCrash].filter(Boolean);
 
           // Apply clipping to each canvas for this specific cell
           ctxs.forEach(ctx => {
@@ -537,6 +557,7 @@ const TrafficHeatmapD3 = forwardRef(({
             else if (d.event_type === 'vizzion') ctx = ctxVizzion;
             else if (d.event_type === 'inrix') ctx = ctxInrix;
             else if (d.event_type === 'poly') ctx = ctxPoly;
+            else if (d.event_type === 'crash') ctx = ctxCrash;
 
             if (!ctx) return;
 
@@ -560,6 +581,22 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.beginPath();
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
               ctx.fill();
+            } else if (d.event_type === 'crash') {
+              let color = "white";
+              if (d.val === "PI") color = "grey";
+              else if (d.val === "FATAL") color = "black";
+
+              ctx.fillStyle = color;
+              ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+              ctx.lineWidth = 1;
+
+              const cx = xOffset + hourScale(d.decimalHour);
+              const cy = yOffset + yScale(d.mm);
+
+              ctx.beginPath();
+              ctx.arc(cx, cy, crashSize || 4, 0, 2 * Math.PI);
+              ctx.fill();
+              ctx.stroke();
             } else {
               ctx.strokeStyle = d.event_type === 'accel' ? "blue" : "black";
               ctx.lineWidth = 2;
@@ -731,6 +768,9 @@ const TrafficHeatmapD3 = forwardRef(({
 
             {/* LAYER P: POLY (Speed Colors) */}
             <canvas ref={polyCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1, display: visibleLayers.poly ? 'block' : 'none' }} />
+
+            {/* LAYER C: CRASH */}
+            <canvas ref={crashCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 6, display: visibleLayers.crash ? 'block' : 'none' }} />
 
             {/* LAYER 5: SVG (Axes, Grid, Interaction) */}
             <svg ref={svgRef} style={{ position: "absolute", top: 0, left: 0, zIndex: 5 }} />
