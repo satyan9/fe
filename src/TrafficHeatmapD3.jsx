@@ -788,7 +788,7 @@ const TrafficHeatmapD3 = forwardRef(({
           <div style={{ width: dimensions.totalWidth, height: dimensions.totalHeight, position: "relative" }}>
 
             {/* LAYER 1: CAR */}
-            <canvas ref={carCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 1, display: visibleLayers.car ? 'block' : 'none' }} />
+            <canvas ref={carCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 2, display: visibleLayers.car ? 'block' : 'none' }} />
 
             {/* LAYER 2: TRUCK */}
             <canvas ref={truckCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 2, display: visibleLayers.truck ? 'block' : 'none' }} />
