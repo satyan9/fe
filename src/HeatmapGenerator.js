@@ -6,7 +6,7 @@ import TrafficHeatmapD3 from "./TrafficHeatmapD3";
 import CameraPreviewRow from "./CameraPreviewRow";
 import { ROUTE_IMAGES, ROUTE_DIRECTIONS } from "./RouteConfig";
 import districtBoundaryData from "./districtBoundary.json";
-
+//line 293 for apicall and 640 for checkbox
 
 const today = dayjs().format("YYYY-MM-DD");
 const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
@@ -22,7 +22,7 @@ const DEFAULT_FORM_STATE = {
   width: 400,
   height: 300,
   size: 2,
-  crash_size: 2,
+  crash_size: 4,
   timezone: "EST",
 };
 
@@ -290,8 +290,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["inrix", "car", "truck", "events", "vizzion", "poly", "crash"];
-
+    const types = ["inrix", "car", "truck", "events", "vizzion", "poly"]; // add crash after
     // setProgress({ completed: 0, total: totalTasks });
 
     let totalCost = 0;
@@ -638,7 +637,7 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "crash", "lines"].map((k) => ( //"exits", "districts"
+                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines"].map((k) => ( //"exits", "districts","crash"
                       <div
 
                         key={k}

@@ -2,7 +2,7 @@ import React from "react";
 import { DatePicker as MUIDatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { ROUTE_OPTIONS, ROUTE_IMAGES, ROUTE_MM_LIMITS } from "./RouteConfig";
-
+// line 348 for crash size input
 
 const STATE_OPTIONS = ["IN", "AR", "AL", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"];
 // const STATE_OPTIONS = ["IN","IL"]
@@ -345,7 +345,7 @@ const HeatmapForm = ({
             </div>
 
             {/* crash size */}
-            <div className="col">
+            {/* <div className="col">
               <label className="form-label fw-semibold mb-1" style={{ fontSize: "0.8rem" }}>Crash Size</label>
               <input
                 type="number"
@@ -355,7 +355,7 @@ const HeatmapForm = ({
                 value={draftFormState.crash_size}
                 onChange={handleInputChange}
               />
-            </div>
+            </div> */}
 
             {/* Submit button */}
             <div className="col d-flex align-items-end">
