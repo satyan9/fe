@@ -290,7 +290,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["inrix", "car", "truck", "events", "vizzion", "poly"]; // add crash after
+    const types = ["inrix", "car", "truck", "events", "vizzion", "poly", "crash"]; // add crash after
     // setProgress({ completed: 0, total: totalTasks });
 
     let totalCost = 0;
@@ -637,7 +637,7 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines"].map((k) => ( //"exits", "districts","crash"
+                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines", "crash"].map((k) => ( //"exits", "districts","crash"
                       <div
 
                         key={k}

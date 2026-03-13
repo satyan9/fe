@@ -192,9 +192,8 @@ const TrafficHeatmapD3 = forwardRef(({
               else if (d.val === "FATAL") color = "black";
 
               ctx.fillStyle = color;
-              ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
-              ctx.lineWidth = 1;
-
+              ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+              ctx.lineWidth = 2;
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
 

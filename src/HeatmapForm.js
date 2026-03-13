@@ -345,7 +345,7 @@ const HeatmapForm = ({
             </div>
 
             {/* crash size */}
-            {/* <div className="col">
+            <div className="col">
               <label className="form-label fw-semibold mb-1" style={{ fontSize: "0.8rem" }}>Crash Size</label>
               <input
                 type="number"
@@ -355,7 +355,7 @@ const HeatmapForm = ({
                 value={draftFormState.crash_size}
                 onChange={handleInputChange}
               />
-            </div> */}
+            </div>
 
             {/* Submit button */}
             <div className="col d-flex align-items-end">
