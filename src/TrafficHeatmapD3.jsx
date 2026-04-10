@@ -47,6 +47,7 @@ const TrafficHeatmapD3 = forwardRef(({
   districtBoundaryData = {},
   districtMode = 0,
   dataVersion = 0,
+  haasMode = 0,
   children
 
 }, ref) => {
@@ -59,10 +60,14 @@ const TrafficHeatmapD3 = forwardRef(({
   const inrixCanvasRef = useRef();
   const polyCanvasRef = useRef();
   const crashCanvasRef = useRef();
+  const haasActiveCanvasRef = useRef();
+  const haasInactiveCanvasRef = useRef();
 
   const svgRef = useRef();
   const sliderTrackRef = useRef();
   const crashPointsRef = useRef([]); // Store crash points for hover detection
+  const haasPointsRef = useRef([]);
+  const haasLocationPointsRef = useRef([]);
 
   // Store drawing context (scales, dims) to use in imperative handle
   const drawContextRef = useRef(null);
@@ -70,6 +75,17 @@ const TrafficHeatmapD3 = forwardRef(({
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, content: "" });
   const [sliderX, setSliderX] = useState(0);
   const isDragging = useRef(false);
+
+  const visibleLayersRef = useRef(visibleLayers);
+  const haasModeRef = useRef(haasMode);
+  
+  useEffect(() => {
+    visibleLayersRef.current = visibleLayers;
+  }, [visibleLayers]);
+
+  useEffect(() => {
+    haasModeRef.current = haasMode;
+  }, [haasMode]);
 
   // 1. Process Grid Structure
   const gridLayout = useMemo(() => {
@@ -114,6 +130,8 @@ const TrafficHeatmapD3 = forwardRef(({
     if (type === 'inrix') return inrixCanvasRef.current?.getContext('2d');
     if (type === 'poly') return polyCanvasRef.current?.getContext('2d');
     if (type === 'crash') return crashCanvasRef.current?.getContext('2d');
+    if (type === 'haas') return haasActiveCanvasRef.current?.getContext('2d');
+    if (type === 'haas_location') return haasActiveCanvasRef.current?.getContext('2d');
     return null;
   }, []);
 
@@ -148,6 +166,8 @@ const TrafficHeatmapD3 = forwardRef(({
             inrixCanvasRef.current?.getContext('2d'),
             polyCanvasRef.current?.getContext('2d'),
             crashCanvasRef.current?.getContext('2d'),
+            haasActiveCanvasRef.current?.getContext('2d'),
+            haasInactiveCanvasRef.current?.getContext('2d'),
           ].filter(Boolean);
 
           // Apply clipping to each canvas for this specific cell
@@ -190,25 +210,59 @@ const TrafficHeatmapD3 = forwardRef(({
               let color = "white";
               if (d.val === "PI") color = "grey";
               else if (d.val === "FATAL") color = "black";
-
               ctx.fillStyle = color;
               ctx.strokeStyle = "rgba(0, 0, 0, 1)";
               ctx.lineWidth = 2;
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
-
               ctx.beginPath();
               ctx.arc(cx, cy, crashSize || 4, 0, 2 * Math.PI);
               ctx.fill();
               ctx.stroke();
-
-              // Store for hover detection
               crashPointsRef.current.push({
-                x: cx,
-                y: cy,
-                mrn: d.mrn,
-                mm: d.mm,
+                x: cx, y: cy, mrn: d.mrn, mm: d.mm,
                 time: d.dateObj || new Date(d.local_bin * 1000)
+              });
+            } else if (d.event_type === 'haas') {
+              const isActive = d.is_active === 1 || d.is_active === true;
+              const haasCtx = isActive
+                ? haasActiveCanvasRef.current?.getContext('2d')
+                : haasInactiveCanvasRef.current?.getContext('2d');
+              if (!haasCtx) return;
+              haasCtx.fillStyle = isActive ? 'rgb(153, 0, 204)' : 'rgb(0, 204, 255)';
+              const cx = xOffset + hourScale(d.decimalHour);
+              const cy = yOffset + yScale(d.mm);
+              haasCtx.beginPath();
+              const haasRadius = isActive ? 5 : 4;
+              haasCtx.arc(cx, cy, haasRadius, 0, 2 * Math.PI);
+              haasCtx.fill();
+              haasPointsRef.current.push({
+                x: cx, y: cy, mm: d.mm,
+                is_active: d.is_active,
+                speed: d.speed,
+                device_name: d.device_name,
+                thingname: d.thingname,
+                type: d.type,
+                time: new Date(d.local_bin * 1000)
+              });
+            } else if (d.event_type === 'haas_location') {
+              const haasCtx = haasActiveCanvasRef.current?.getContext('2d');
+              if (!haasCtx) return;
+              haasCtx.fillStyle = 'rgb(153, 0, 204)';
+              const cx = xOffset + hourScale(d.decimalHour);
+              const cy = yOffset + yScale(d.mm);
+              haasCtx.beginPath();
+              const haasLocRadius2 = 5;
+              haasCtx.arc(cx, cy, haasLocRadius2, 0, 2 * Math.PI);
+              haasCtx.fill();
+              haasLocationPointsRef.current.push({
+                x: cx, y: cy, mm: d.mm,
+                device_name: d.device_name,
+                thingname: d.thingname,
+                type: d.type,
+                street_name: d.street_name,
+                start_bin: d.start_bin,
+                end_bin: d.end_bin,
               });
             } else {
               // Accel/Decel
@@ -252,6 +306,8 @@ const TrafficHeatmapD3 = forwardRef(({
     svg.style("cursor", "none");
 
     crashPointsRef.current = []; // Clear crash points on re-draw
+    haasPointsRef.current = [];
+    haasLocationPointsRef.current = [];
 
     // --- SETUP CANVASES ---
     const dpr = window.devicePixelRatio || 1;
@@ -276,6 +332,8 @@ const TrafficHeatmapD3 = forwardRef(({
     const ctxInrix = setupCanvas(inrixCanvasRef);
     const ctxPoly = setupCanvas(polyCanvasRef);
     const ctxCrash = setupCanvas(crashCanvasRef);
+    const ctxHaasActive = setupCanvas(haasActiveCanvasRef);
+    const ctxHaasInactive = setupCanvas(haasInactiveCanvasRef);
 
     const rectH = dynamicRectH;
 
@@ -522,24 +580,69 @@ const TrafficHeatmapD3 = forwardRef(({
             };
 
             let content = ` ${formatTimeUTC(hoveredDate)} |  ${hoveredMM.toFixed(1)}`;
+            let isPointHovered = false;
 
             // Check if hovering near a crash point
-            const hoverThreshold = 10; // pixels
-            const nearbyCrash = crashPointsRef.current.find(cp => {
-              const dx = globalX - cp.x;
-              const dy = globalY - cp.y;
-              return Math.sqrt(dx * dx + dy * dy) < hoverThreshold;
-            });
+            const crashHoverThreshold = (crashSize || 4) ; // Match the specific dynamic drawn size + 2px buffer
+            let nearbyCrash;
+            if (visibleLayersRef.current.crash) {
+              nearbyCrash = crashPointsRef.current.find(cp => {
+                const dx = globalX - cp.x;
+                const dy = globalY - cp.y;
+                return Math.sqrt(dx * dx + dy * dy) <= crashHoverThreshold;
+              });
+            }
 
             if (nearbyCrash) {
               content += ` | MRN: ${nearbyCrash.mrn || 'N/A'}`;
+              isPointHovered = true;
+            }
+
+            const haasHoverThreshold = 5 ; // haas drawn radius is 5, plus 2px buffer
+            let nearbyHaas;
+            if (haasModeRef.current > 0) {
+              nearbyHaas = haasPointsRef.current.find(hp => {
+                const isActive = hp.is_active === 1 || hp.is_active === true;
+                
+                if (haasModeRef.current === 1 && !isActive) return false;
+                if (haasModeRef.current === 3 && isActive) return false;
+
+                const dx = globalX - hp.x;
+                const dy = globalY - hp.y;
+                return Math.sqrt(dx * dx + dy * dy) <= haasHoverThreshold;
+              });
+            }
+            
+            if (nearbyHaas) {
+              content = `HAAS Points\nDevice Name: ${nearbyHaas.device_name}\nTimestamp: ${formatTimeUTC(nearbyHaas.time)}\nMM: ${nearbyHaas.mm}\nActive: ${nearbyHaas.is_active === 1 || nearbyHaas.is_active === true ? 'Yes' : 'No'}\nSpeed: ${nearbyHaas.speed}\nType: ${nearbyHaas.type}\nThing Name: ${nearbyHaas.thingname}`;
+              isPointHovered = true;
+            }
+
+            let nearbyHaasLocation;
+            if (haasModeRef.current === 1 || haasModeRef.current === 2) {
+              nearbyHaasLocation = haasLocationPointsRef.current.find(hp => {
+                const dx = globalX - hp.x;
+                const dy = globalY - hp.y;
+                return Math.sqrt(dx * dx + dy * dy) <= haasHoverThreshold;
+              });
+            }
+            
+            if (nearbyHaasLocation) {
+              const startTime = new Date(nearbyHaasLocation.start_bin * 1000);
+              const endTime = new Date(nearbyHaasLocation.end_bin * 1000);
+              const durationMs = (nearbyHaasLocation.end_bin - nearbyHaasLocation.start_bin) * 1000;
+              const durationHrs = Math.floor(durationMs / 3600000).toString().padStart(2, '0');
+              const durationMins = Math.floor((durationMs % 3600000) / 60000).toString().padStart(2, '0');
+              content = `HAAS Incident/Location\nDevice Name: ${nearbyHaasLocation.device_name}\nStart Time: ${formatTimeUTC(startTime)}\nEnd Time: ${formatTimeUTC(endTime)}\nDuration (HH:mm): ${durationHrs}:${durationMins}\nMM: ${nearbyHaasLocation.mm}\nStreet: ${nearbyHaasLocation.street_name}\nType: ${nearbyHaasLocation.type}\nThing Name: ${nearbyHaasLocation.thingname}`;
+              isPointHovered = true;
             }
 
             setTooltip({
               visible: true,
               x: event.clientX + 15,
               y: event.clientY - 15,
-              content: content
+              content: content,
+              isPoint: isPointHovered
             });
           })
           .on("mouseout", () => {
@@ -566,7 +669,7 @@ const TrafficHeatmapD3 = forwardRef(({
           const cellData = groupedData[dayStr][dir];
 
           // Define all available contexts to apply clipping
-          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly, ctxCrash].filter(Boolean);
+          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly, ctxCrash, ctxHaasActive, ctxHaasInactive].filter(Boolean);
 
           // Apply clipping to each canvas for this specific cell
           ctxs.forEach(ctx => {
@@ -587,6 +690,8 @@ const TrafficHeatmapD3 = forwardRef(({
             else if (d.event_type === 'inrix') ctx = ctxInrix;
             else if (d.event_type === 'poly') ctx = ctxPoly;
             else if (d.event_type === 'crash') ctx = ctxCrash;
+            else if (d.event_type === 'haas') ctx = ctxHaasActive;
+            else if (d.event_type === 'haas_location') ctx = ctxHaasActive;
 
             if (!ctx) return;
 
@@ -810,6 +915,9 @@ const TrafficHeatmapD3 = forwardRef(({
             {/* LAYER C: CRASH */}
             <canvas ref={crashCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 6, display: visibleLayers.crash ? 'block' : 'none' }} />
 
+            <canvas ref={haasActiveCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 8, display: (haasMode === 1 || haasMode === 2) ? 'block' : 'none' }} />
+            <canvas ref={haasInactiveCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 7, display: haasMode === 2 || haasMode === 3 ? 'block' : 'none' }} />
+
             {/* LAYER 5: SVG (Axes, Grid, Interaction) */}
             <svg ref={svgRef} style={{ position: "absolute", top: 0, left: 0, zIndex: 5 }} />
 
@@ -873,10 +981,11 @@ const TrafficHeatmapD3 = forwardRef(({
       {tooltip.visible && (
         <div style={{
           position: "fixed", left: tooltip.x, top: tooltip.y,
-          backgroundColor: "rgba(33, 37, 41, 0.9)", color: "white",
+          backgroundColor: tooltip.isPoint ? "white" : "rgba(33, 37, 41, 0.9)", 
+          color: tooltip.isPoint ? "black" : "white",
           padding: "6px 10px", borderRadius: "4px", fontSize: "12px",
           fontWeight: "500", pointerEvents: "none", zIndex: 9999,
-          whiteSpace: "nowrap", boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
+          whiteSpace: "pre-line", boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
         }}>
           {tooltip.content}
         </div>
