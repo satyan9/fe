@@ -248,3 +248,28 @@ button[type="submit"]:disabled {
   background-color: #6f42c1 !important;
   color: white !important;
 }
+
+/* Vizzion Viewer Animations */
+.vizzion-image-container {
+  animation: vizzionFadeIn 0.5s ease-out;
+}
+
+@keyframes vizzionFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vizzion-caption {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
+  line-height: 1.4;
+  padding: 0 5px;
+}

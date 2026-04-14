@@ -209,7 +209,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route
               });
             } else if (d.event_type === 'crash') {
               let color = "white";
@@ -666,7 +666,7 @@ const TrafficHeatmapD3 = forwardRef(({
               });
 
               if (clickedVizzion && onVizzionClick) {
-                onVizzionClick({ vehicleid: clickedVizzion.vehicleid, original_time: clickedVizzion.original_time });
+                onVizzionClick(clickedVizzion);
               }
             }
           })
@@ -741,7 +741,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route
               });
             } else if (d.event_type === 'crash') {
               let color = "white";

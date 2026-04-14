@@ -94,7 +94,8 @@ const HeatmapGenerator = () => {
     setVizzionImages([]);
     setVizzionCurrentIdx(0);
     try {
-      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(point.vehicleid)}&time=${encodeURIComponent(point.original_time)}`;
+      const { vehicleid, original_time, mm, state, full_route } = point;
+      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(vehicleid)}&time=${encodeURIComponent(original_time)}&mm=${encodeURIComponent(mm)}&state=${encodeURIComponent(state || appliedFormState.state)}&route=${encodeURIComponent(full_route || appliedFormState.route)}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data && data.images) {
@@ -105,7 +106,7 @@ const HeatmapGenerator = () => {
     } finally {
       setVizzionLoading(false);
     }
-  }, []);
+  }, [appliedFormState]);
 
   const formatBytesToTB = (bytes) => {
     if (!bytes) return "--";
@@ -198,6 +199,8 @@ const HeatmapGenerator = () => {
         type: row.type,
         vehicleid: row.vehicleid,
         original_time: row.original_time,
+        state: row.state,
+        full_route: row.direction,
       });
     }
     return map;
@@ -910,27 +913,27 @@ const HeatmapGenerator = () => {
                     <div className="w-100 d-flex flex-column align-items-center position-relative">
                       <div className="d-flex align-items-center justify-content-center w-100 position-relative p-2">
                         <button 
-                          className="btn btn-dark rounded-circle position-absolute start-0 ms-2" 
+                          className="nav-arrow position-absolute start-0 ms-2" 
                           disabled={vizzionCurrentIdx === 0} 
                           onClick={() => setVizzionCurrentIdx(p => Math.max(0, p - 3))}
-                          style={{ zIndex: 10, width: "40px", height: "40px" }}
+                          style={{ zIndex: 10 }}
                         >
                           &lt;
                         </button>
                         
                         <div className="d-flex justify-content-center gap-3 w-100" style={{ maxWidth: '90%', overflow: 'hidden' }}>
                           {vizzionImages.slice(vizzionCurrentIdx, vizzionCurrentIdx + 3).map((imgObj, idx) => (
-                            <div key={idx} className="d-flex flex-column align-items-center" style={{ flex: "1 1 0", minWidth: 0 }}>
-                              <div style={{ border: '2px solid #ccc', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black', width: "100%", height: "250px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <div key={`${vizzionCurrentIdx}-${idx}`} className="vizzion-image-container d-flex flex-column align-items-center" style={{ flex: "1 1 0", minWidth: 0 }}>
+                              <div style={{ border: '2px solid #ccc', borderRadius: '8px', overflow: 'hidden', width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <img 
                                   src={imgObj.url} 
                                   alt="Vizzion Drive" 
-                                  style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                                  style={{ width: '100%', height: 'auto', display: "block" }} 
                                   onError={(e) => { e.target.src = ''; e.target.alt = 'Image failed to load'; }}
                                 />
                               </div>
                               <div className="mt-2 text-center" style={{ width: "100%" }}>
-                                <div className="text-muted small fw-bold text-truncate" title={imgObj.name}>{imgObj.name}</div>
+                                <div className="text-muted small fw-bold vizzion-caption" title={imgObj.name}>{imgObj.name}</div>
                                 <a 
                                   href={imgObj.url} 
                                   target="_blank" 
@@ -945,10 +948,10 @@ const HeatmapGenerator = () => {
                         </div>
 
                         <button 
-                          className="btn btn-dark rounded-circle position-absolute end-0 me-2" 
+                          className="nav-arrow position-absolute end-0 me-2" 
                           disabled={vizzionCurrentIdx + 3 >= vizzionImages.length} 
                           onClick={() => setVizzionCurrentIdx(p => Math.min(vizzionImages.length - 1, p + 3))}
-                          style={{ zIndex: 10, width: "40px", height: "40px" }}
+                          style={{ zIndex: 10 }}
                         >
                           &gt;
                         </button>
