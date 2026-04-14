@@ -82,6 +82,31 @@ const HeatmapGenerator = () => {
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // VIZZION STATE
+  const [mediaMode, setMediaMode] = useState("camera"); // "camera" | "vizzion"
+  const [vizzionImages, setVizzionImages] = useState([]);
+  const [vizzionLoading, setVizzionLoading] = useState(false);
+  const [vizzionCurrentIdx, setVizzionCurrentIdx] = useState(0);
+
+  const handleVizzionClick = useCallback(async (point) => {
+    setMediaMode("vizzion");
+    setVizzionLoading(true);
+    setVizzionImages([]);
+    setVizzionCurrentIdx(0);
+    try {
+      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(point.vehicleid)}&time=${encodeURIComponent(point.original_time)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data && data.images) {
+        setVizzionImages(data.images);
+      }
+    } catch(e) {
+      console.error("Failed to load vizzion images:", e);
+    } finally {
+      setVizzionLoading(false);
+    }
+  }, []);
+
   const formatBytesToTB = (bytes) => {
     if (!bytes) return "--";
     return (bytes / 1e12).toFixed(5) + " TB";
@@ -171,6 +196,8 @@ const HeatmapGenerator = () => {
         device_name: row.device_name,
         thingname: row.thingname,
         type: row.type,
+        vehicleid: row.vehicleid,
+        original_time: row.original_time,
       });
     }
     return map;
@@ -279,7 +306,7 @@ const HeatmapGenerator = () => {
     const end_mm = stateToUse.end_mm;
     const state = stateToUse.state;
 
-    const cameraUrl = `http://localhost:8000/get_camera_locations?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
+    const cameraUrl = `http://localhost:5000/get_camera_locations?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
     fetch(cameraUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -303,7 +330,7 @@ const HeatmapGenerator = () => {
       .catch((err) => console.error("Error fetching cameras:", err));
 
     // Fetch Exit Lines
-    const exitLinesUrl = `http://localhost:8000/get_exit_lines?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
+    const exitLinesUrl = `http://localhost:5000/get_exit_lines?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
     fetch(exitLinesUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -354,7 +381,7 @@ const HeatmapGenerator = () => {
               const processResponse = async (formData, urlOverride) => {
                 await fetchData(
                   urlOverride ||
-                  `http://localhost:8000/generate_heatmap_${type}`,
+                  `http://localhost:5000/generate_heatmap_${type}`,
                   formData,
                   signal,
                   async (dataChunk) => {
@@ -397,7 +424,7 @@ const HeatmapGenerator = () => {
                   .add(1, "day")
                   .format("YYYY-MM-DD");
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
-                const url = `http://localhost:8000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "inrix") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -405,7 +432,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `http://localhost:8000/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "poly") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -413,7 +440,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `http://localhost:8000/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "vizzion") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -442,13 +469,13 @@ const HeatmapGenerator = () => {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `http://localhost:8000/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "haas_location") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `http://localhost:8000/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else {
                 // Events
@@ -668,6 +695,8 @@ const HeatmapGenerator = () => {
                 districtMode={districtMode}
                 haasMode={haasMode}
                 showTimeIndicators={showTimeIndicators}
+                onVizzionClick={handleVizzionClick}
+
 
               >
                 {/* FOOTER */}
@@ -845,16 +874,94 @@ const HeatmapGenerator = () => {
               {/* {loading && <div style={{ position: "absolute", top: 10, right: 10 }}>Loading...</div>} */}
             </div>
 
-            <div className="mt-4 px-3">
-              <CameraPreviewRow
-                data={selectedMMs.map((mm) => ({ mm }))}
-                allMMs={cameraLocations}
-                dateTime={currentGraphTime}
-                route={appliedFormState.route}
-                state={appliedFormState.state}
-                onMMChange={handleMMChange}
-                onTimeAdjust={handleTimeAdjust}
-              />
+            <div className="mt-4 px-3 p-3 bg-white border rounded shadow-sm">
+              <div className="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
+                <button 
+                  className={`btn btn-sm fw-bold ${mediaMode === 'camera' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  onClick={() => setMediaMode('camera')}
+                >
+                  Cameras
+                </button>
+                <button 
+                  className={`btn btn-sm fw-bold ${mediaMode === 'vizzion' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  onClick={() => setMediaMode('vizzion')}
+                >
+                  Vizzion Images
+                </button>
+              </div>
+
+              {mediaMode === 'camera' ? (
+                <CameraPreviewRow
+                  data={selectedMMs.map((mm) => ({ mm }))}
+                  allMMs={cameraLocations}
+                  dateTime={currentGraphTime}
+                  route={appliedFormState.route}
+                  state={appliedFormState.state}
+                  onMMChange={handleMMChange}
+                  onTimeAdjust={handleTimeAdjust}
+                />
+              ) : (
+                <div className="vizzion-viewer d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '300px' }}>
+                  {vizzionLoading ? (
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  ) : vizzionImages.length > 0 ? (
+                    <div className="w-100 d-flex flex-column align-items-center position-relative">
+                      <div className="d-flex align-items-center justify-content-center w-100 position-relative p-2">
+                        <button 
+                          className="btn btn-dark rounded-circle position-absolute start-0 ms-2" 
+                          disabled={vizzionCurrentIdx === 0} 
+                          onClick={() => setVizzionCurrentIdx(p => Math.max(0, p - 3))}
+                          style={{ zIndex: 10, width: "40px", height: "40px" }}
+                        >
+                          &lt;
+                        </button>
+                        
+                        <div className="d-flex justify-content-center gap-3 w-100" style={{ maxWidth: '90%', overflow: 'hidden' }}>
+                          {vizzionImages.slice(vizzionCurrentIdx, vizzionCurrentIdx + 3).map((imgObj, idx) => (
+                            <div key={idx} className="d-flex flex-column align-items-center" style={{ flex: "1 1 0", minWidth: 0 }}>
+                              <div style={{ border: '2px solid #ccc', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'black', width: "100%", height: "250px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <img 
+                                  src={imgObj.url} 
+                                  alt="Vizzion Drive" 
+                                  style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                                  onError={(e) => { e.target.src = ''; e.target.alt = 'Image failed to load'; }}
+                                />
+                              </div>
+                              <div className="mt-2 text-center" style={{ width: "100%" }}>
+                                <div className="text-muted small fw-bold text-truncate" title={imgObj.name}>{imgObj.name}</div>
+                                <a 
+                                  href={imgObj.url} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="btn btn-outline-primary btn-sm mt-1"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button 
+                          className="btn btn-dark rounded-circle position-absolute end-0 me-2" 
+                          disabled={vizzionCurrentIdx + 3 >= vizzionImages.length} 
+                          onClick={() => setVizzionCurrentIdx(p => Math.min(vizzionImages.length - 1, p + 3))}
+                          style={{ zIndex: 10, width: "40px", height: "40px" }}
+                        >
+                          &gt;
+                        </button>
+                      </div>
+                      <div className="mt-3 text-center">
+                        <span className="badge bg-secondary mb-2">Displaying {vizzionCurrentIdx + 1} - {Math.min(vizzionCurrentIdx + 3, vizzionImages.length)} / {vizzionImages.length}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-muted">No Vizzion images selected. Click a blue drive point on the heatmap.</div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

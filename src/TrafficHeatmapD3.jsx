@@ -48,6 +48,7 @@ const TrafficHeatmapD3 = forwardRef(({
   districtMode = 0,
   dataVersion = 0,
   haasMode = 0,
+  onVizzionClick,
   children
 
 }, ref) => {
@@ -68,6 +69,7 @@ const TrafficHeatmapD3 = forwardRef(({
   const crashPointsRef = useRef([]); // Store crash points for hover detection
   const haasPointsRef = useRef([]);
   const haasLocationPointsRef = useRef([]);
+  const vizzionPointsRef = useRef([]);
 
   // Store drawing context (scales, dims) to use in imperative handle
   const drawContextRef = useRef(null);
@@ -206,6 +208,9 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.beginPath();
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
+              vizzionPointsRef.current.push({
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val
+              });
             } else if (d.event_type === 'crash') {
               let color = "white";
               if (d.val === "PI") color = "grey";
@@ -308,6 +313,7 @@ const TrafficHeatmapD3 = forwardRef(({
     crashPointsRef.current = []; // Clear crash points on re-draw
     haasPointsRef.current = [];
     haasLocationPointsRef.current = [];
+    vizzionPointsRef.current = [];
 
     // --- SETUP CANVASES ---
     const dpr = window.devicePixelRatio || 1;
@@ -645,6 +651,25 @@ const TrafficHeatmapD3 = forwardRef(({
               isPoint: isPointHovered
             });
           })
+          .on("click", (event) => {
+            const [px, py] = d3.pointer(event);
+            const globalX = px + xOffset;
+            const globalY = py + yOffset;
+            const hoverThreshold = 5;
+
+            if (visibleLayersRef.current.vizzion) {
+              const clickedVizzion = vizzionPointsRef.current.find(vp => {
+                if (vp.val < 2) return false; // Only interactive for val >= 2 (images available)
+                const dx = globalX - vp.x;
+                const dy = globalY - vp.y;
+                return Math.sqrt(dx * dx + dy * dy) <= hoverThreshold;
+              });
+
+              if (clickedVizzion && onVizzionClick) {
+                onVizzionClick({ vehicleid: clickedVizzion.vehicleid, original_time: clickedVizzion.original_time });
+              }
+            }
+          })
           .on("mouseout", () => {
             setTooltip(t => ({ ...t, visible: false }));
             cursorCircle.style("opacity", 0);
@@ -715,6 +740,9 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.beginPath();
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
               ctx.fill();
+              vizzionPointsRef.current.push({
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val
+              });
             } else if (d.event_type === 'crash') {
               let color = "white";
               if (d.val === "PI") color = "grey";
