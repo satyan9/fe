@@ -209,7 +209,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
               });
             } else if (d.event_type === 'crash') {
               let color = "white";
@@ -643,6 +643,21 @@ const TrafficHeatmapD3 = forwardRef(({
               isPointHovered = true;
             }
 
+            let nearbyVizzion;
+            if (visibleLayersRef.current.vizzion) {
+              nearbyVizzion = vizzionPointsRef.current.find(vp => {
+                if (vp.val !== 2) return false; // Only show tooltip for blue points
+                const dx = globalX - vp.x;
+                const dy = globalY - vp.y;
+                return Math.sqrt(dx * dx + dy * dy) <= 1; // Strict hover over the point
+              });
+            }
+
+            if (nearbyVizzion) {
+              content = `Vizzion Drives\nVehicle ID: ${nearbyVizzion.vehicleid}\nSeconds: ${nearbyVizzion.seconds}`;
+              isPointHovered = true;
+            }
+
             setTooltip({
               visible: true,
               x: event.clientX + 15,
@@ -741,7 +756,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route
+                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
               });
             } else if (d.event_type === 'crash') {
               let color = "white";

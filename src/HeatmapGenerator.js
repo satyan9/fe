@@ -201,6 +201,7 @@ const HeatmapGenerator = () => {
         original_time: row.original_time,
         state: row.state,
         full_route: row.direction,
+        seconds: row.seconds,
       });
     }
     return map;
