@@ -95,7 +95,7 @@ const HeatmapGenerator = () => {
     setVizzionCurrentIdx(0);
     try {
       const { vehicleid, original_time, mm, state, full_route } = point;
-      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(vehicleid)}&time=${encodeURIComponent(original_time)}&mm=${encodeURIComponent(mm)}&state=${encodeURIComponent(state || appliedFormState.state)}&route=${encodeURIComponent(full_route || appliedFormState.route)}`;
+      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(vehicleid)}&time=${encodeURIComponent(original_time)}&mm=${encodeURIComponent(mm)}&state=${encodeURIComponent(state || appliedFormState.state)}&route=${encodeURIComponent(full_route || appliedFormState.route)}&timezone=${encodeURIComponent(appliedFormState.timezone || 'EST')}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data && data.images) {
@@ -883,14 +883,15 @@ const HeatmapGenerator = () => {
                 <button 
                   className={`btn btn-sm fw-bold ${mediaMode === 'camera' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => setMediaMode('camera')}
+                  disabled={appliedFormState.state !== 'IN'}
                 >
-                  Cameras
+                  Traffic Camera
                 </button>
                 <button 
                   className={`btn btn-sm fw-bold ${mediaMode === 'vizzion' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => setMediaMode('vizzion')}
                 >
-                  Vizzion Images
+                  Dash Camera
                 </button>
               </div>
 
