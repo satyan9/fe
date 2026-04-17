@@ -209,7 +209,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);// change the size of the circle here
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
+                x: cx, y: cy, vehicleid: d.vehicleid, vehicleid_morphed: d.vehicleid_morphed, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
               });
             } else if (d.event_type === 'crash') {
               let color = "white";
@@ -238,7 +238,7 @@ const TrafficHeatmapD3 = forwardRef(({
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
               haasCtx.beginPath();
-              const haasRadius = isActive ? 5 : 4;
+              const haasRadius = isActive ? 3 : 2;
               haasCtx.arc(cx, cy, haasRadius, 0, 2 * Math.PI);
               haasCtx.fill();
               haasPointsRef.current.push({
@@ -257,7 +257,7 @@ const TrafficHeatmapD3 = forwardRef(({
               const cx = xOffset + hourScale(d.decimalHour);
               const cy = yOffset + yScale(d.mm);
               haasCtx.beginPath();
-              const haasLocRadius2 = 5;
+              const haasLocRadius2 = 3;
               haasCtx.arc(cx, cy, haasLocRadius2, 0, 2 * Math.PI);
               haasCtx.fill();
               haasLocationPointsRef.current.push({
@@ -654,7 +654,7 @@ const TrafficHeatmapD3 = forwardRef(({
             }
 
             if (nearbyVizzion) {
-              content = `Vizzion Drives\nVehicle ID: ${nearbyVizzion.vehicleid}\nSeconds: ${nearbyVizzion.seconds}`;
+              content = `Vizzion Drives\nVehicle ID: ${nearbyVizzion.vehicleid_morphed}\nSeconds: ${nearbyVizzion.seconds}`;
               isPointHovered = true;
             }
 
@@ -756,7 +756,7 @@ const TrafficHeatmapD3 = forwardRef(({
               ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
               ctx.fill();
               vizzionPointsRef.current.push({
-                x: cx, y: cy, vehicleid: d.vehicleid, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
+                x: cx, y: cy, vehicleid: d.vehicleid, vehicleid_morphed: d.vehicleid_morphed, original_time: d.original_time, val: d.val, mm: d.mm, state: d.state, full_route: d.full_route, seconds: d.seconds
               });
             } else if (d.event_type === 'crash') {
               let color = "white";

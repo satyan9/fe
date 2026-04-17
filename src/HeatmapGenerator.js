@@ -198,6 +198,7 @@ const HeatmapGenerator = () => {
         thingname: row.thingname,
         type: row.type,
         vehicleid: row.vehicleid,
+        vehicleid_morphed: row.vehicleid_morphed,
         original_time: row.original_time,
         state: row.state,
         full_route: row.direction,
@@ -302,6 +303,9 @@ const HeatmapGenerator = () => {
     setExitLines([]);
     setSelectedMMs([null, null, null]);
     setCurrentGraphTime(null);
+    setMediaMode(stateToUse.state === 'IN' ? 'camera' : 'vizzion');
+    setVizzionImages([]);
+    setVizzionCurrentIdx(0);
 
     // Fetch Camera Locations
     // No more master data storage! We draw and discard.
