@@ -8,6 +8,22 @@ import { ROUTE_IMAGES, ROUTE_DIRECTIONS } from "./RouteConfig";
 import districtBoundaryData from "./districtBoundary.json";
 //line 293 for apicall and 640 for checkbox
 
+// Returns nth Sunday (1-indexed) of a given month/year
+const getNthSunday = (year, month, n) => {
+  const d = new Date(year, month, 1);
+  const firstSundayOffset = (7 - d.getDay()) % 7;
+  return new Date(year, month, 1 + firstSundayOffset + (n - 1) * 7);
+};
+
+// US DST: EDT = 2nd Sunday Mar → 1st Sunday Nov; EST otherwise
+const getDefaultTimezone = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const dstStart = getNthSunday(year, 2, 2);  // 2nd Sunday of March
+  const dstEnd   = getNthSunday(year, 10, 1); // 1st Sunday of November
+  return now >= dstStart && now < dstEnd ? "EDT" : "EST";
+};
+
 const today = dayjs().format("YYYY-MM-DD");
 const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
 const DEFAULT_FORM_STATE = {
@@ -23,7 +39,7 @@ const DEFAULT_FORM_STATE = {
   height: 300,
   size: 2,
   crash_size: 4,
-  timezone: "EST",
+  timezone: getDefaultTimezone(),
 };
 
 const DISTRICT_COLORS = {
@@ -101,7 +117,7 @@ const HeatmapGenerator = () => {
       if (data && data.images) {
         setVizzionImages(data.images);
       }
-    } catch(e) {
+    } catch (e) {
       console.error("Failed to load vizzion images:", e);
     } finally {
       setVizzionLoading(false);
@@ -601,7 +617,16 @@ const HeatmapGenerator = () => {
       if (key === "E") setShowExitLines((prev) => !prev);
       if (key === "R") setDistrictMode((prev) => (prev + 1) % 3);
       if (key === "S") setShowTimeIndicators((prev) => !prev);
-      if (key === "Z") setVisibleLayers((p) => ({ ...p, vizzion: !p.vizzion }));
+      if (key === "Z") {
+        setVisibleLayers((p) => {
+          const newVizzion = !p.vizzion;
+          // If turning OFF vizzion, clear the selection circle
+          if (!newVizzion && heatmapRef.current && heatmapRef.current.clearVizzionSelection) {
+            heatmapRef.current.clearVizzionSelection();
+          }
+          return { ...p, vizzion: newVizzion };
+        });
+      }
       if (key === "G") setVisibleLayers((p) => ({ ...p, inrix: !p.inrix }));
       if (key === "F") setVisibleLayers((p) => ({ ...p, poly: !p.poly }));
       if (key === "C") setVisibleLayers((p) => ({ ...p, crash: !p.crash }));
@@ -622,9 +647,25 @@ const HeatmapGenerator = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate date range
+    const { start_date, end_date, state, route, start_mm, end_mm, timezone } = draftFormState;
+    const startDay = dayjs(start_date);
+    const endDay = dayjs(end_date);
+    const daysDiff = endDay.diff(startDay, 'day');
+
+    if (daysDiff > 60) {
+      alert('Error: Date range cannot exceed 60 days (2 months). Please select a shorter time period.');
+      return; // Stop execution
+    }
+
+    if (daysDiff < 0) {
+      alert('Error: End date must be after start date.');
+      return;
+    }
+
     isFormNavigation.current = true;
     setAppliedFormState(draftFormState);
-    const { state, start_date, end_date, route, start_mm, end_mm, timezone } = draftFormState;
     // Updated route structure including state and timezone
     navigate(`/${state}/${start_date}/${end_date}/${route}/${start_mm}/${end_mm}/${timezone}`, {
       replace: true,
@@ -715,7 +756,10 @@ const HeatmapGenerator = () => {
                 >
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
-                    {["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines", "crash", "haas"].map((k) => (
+                    {(appliedFormState.state === "IN"
+                      ? ["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines", "exits", "districts", "crash", "haas"]
+                      : ["car", "truck", "accel", "decel", "vizzion", "exits", "districts"]
+                    ).map((k) => (
                       <div
                         key={k}
                         className="d-flex align-items-center gap-2 flex-nowrap"
@@ -791,13 +835,13 @@ const HeatmapGenerator = () => {
                             : k === "exits"
                               ? "Exit Lines"
                               : k === "vizzion"
-                                ? "Vizzion Drives"
+                                ? "Vizzion"
                                 : k === "inrix"
                                   ? "Inrix Data"
                                   : k === "poly"
-                                    ? "Poly XD Data"
+                                    ? "Poly inrix"
                                     : k === "crash"
-                                      ? "Crash Data"
+                                      ? "Crash"
                                       : k === "haas"
                                         ? haasMode === 0 ? "HAAS Off" : haasMode === 1 ? "HAAS Active" : haasMode === 2 ? "HAAS All" : "HAAS Inactive"
                                         : k === "districts"
@@ -884,14 +928,14 @@ const HeatmapGenerator = () => {
 
             <div className="mt-4 px-3 p-3 bg-white border rounded shadow-sm">
               <div className="d-flex align-items-center gap-3 mb-3 border-bottom pb-2">
-                <button 
+                <button
                   className={`btn btn-sm fw-bold ${mediaMode === 'camera' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => setMediaMode('camera')}
                   disabled={appliedFormState.state !== 'IN'}
                 >
                   Traffic Camera
                 </button>
-                <button 
+                <button
                   className={`btn btn-sm fw-bold ${mediaMode === 'vizzion' ? 'btn-primary' : 'btn-outline-secondary'}`}
                   onClick={() => setMediaMode('vizzion')}
                 >
@@ -918,32 +962,32 @@ const HeatmapGenerator = () => {
                   ) : vizzionImages.length > 0 ? (
                     <div className="w-100 d-flex flex-column align-items-center position-relative">
                       <div className="d-flex align-items-center justify-content-center w-100 position-relative p-2">
-                        <button 
-                          className="nav-arrow position-absolute start-0 ms-2" 
-                          disabled={vizzionCurrentIdx === 0} 
+                        <button
+                          className="nav-arrow position-absolute start-0 ms-2"
+                          disabled={vizzionCurrentIdx === 0}
                           onClick={() => setVizzionCurrentIdx(p => Math.max(0, p - 3))}
                           style={{ zIndex: 10 }}
                         >
                           &lt;
                         </button>
-                        
+
                         <div className="d-flex justify-content-center gap-3 w-100" style={{ maxWidth: '90%', overflow: 'hidden' }}>
                           {vizzionImages.slice(vizzionCurrentIdx, vizzionCurrentIdx + 3).map((imgObj, idx) => (
                             <div key={`${vizzionCurrentIdx}-${idx}`} className="vizzion-image-container d-flex flex-column align-items-center" style={{ flex: "1 1 0", minWidth: 0 }}>
                               <div style={{ border: '2px solid #ccc', borderRadius: '8px', overflow: 'hidden', width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <img 
-                                  src={imgObj.url} 
-                                  alt="Vizzion Drive" 
-                                  style={{ width: '100%', height: 'auto', display: "block" }} 
+                                <img
+                                  src={imgObj.url}
+                                  alt="Vizzion Drive"
+                                  style={{ width: '100%', height: 'auto', display: "block" }}
                                   onError={(e) => { e.target.src = ''; e.target.alt = 'Image failed to load'; }}
                                 />
                               </div>
                               <div className="mt-2 text-center" style={{ width: "100%" }}>
                                 <div className="text-muted small fw-bold vizzion-caption" title={imgObj.name}>{imgObj.name}</div>
-                                <a 
-                                  href={imgObj.url} 
-                                  target="_blank" 
-                                  rel="noreferrer" 
+                                <a
+                                  href={imgObj.url}
+                                  target="_blank"
+                                  rel="noreferrer"
                                   className="btn btn-outline-primary btn-sm mt-1"
                                 >
                                   Download
@@ -953,9 +997,9 @@ const HeatmapGenerator = () => {
                           ))}
                         </div>
 
-                        <button 
-                          className="nav-arrow position-absolute end-0 me-2" 
-                          disabled={vizzionCurrentIdx + 3 >= vizzionImages.length} 
+                        <button
+                          className="nav-arrow position-absolute end-0 me-2"
+                          disabled={vizzionCurrentIdx + 3 >= vizzionImages.length}
                           onClick={() => setVizzionCurrentIdx(p => Math.min(vizzionImages.length - 1, p + 3))}
                           style={{ zIndex: 10 }}
                         >

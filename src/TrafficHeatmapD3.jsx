@@ -16,14 +16,14 @@ const SPEED_COLORS = [
 const COLOR_GREATER_65 = "rgb(204, 255, 153)"; // >65
 const COLOR_NO_DATA = "rgb(238, 238, 238)";    // No Data
 
-// const DISTRICT_COLORS = {
-//   'Crawfordsville': 'rgb(231, 239, 249)',
-//   'Fort Wayne': 'rgb(207, 207, 207)',
-//   'Greenfield': 'rgb(237, 255, 222)',
-//   'La Porte': 'rgb(253, 233, 223)',
-//   'Seymour': 'rgb(195, 196, 243)',
-//   'Vincennes': 'rgb(244, 158, 170)',
-// };
+const DISTRICT_COLORS = {
+  'Crawfordsville': 'rgb(231, 239, 249)',
+  'Fort Wayne': 'rgb(207, 207, 207)',
+  'Greenfield': 'rgb(237, 255, 222)',
+  'La Porte': 'rgb(253, 233, 223)',
+  'Seymour': 'rgb(195, 196, 243)',
+  'Vincennes': 'rgb(244, 158, 170)',
+};
 
 // Removed hardcoded ROUTE_DIRECTIONS_IN in favor of RouteConfig
 
@@ -76,11 +76,12 @@ const TrafficHeatmapD3 = forwardRef(({
 
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, content: "" });
   const [sliderX, setSliderX] = useState(0);
+  const [selectedVizzionPoint, setSelectedVizzionPoint] = useState(null);
   const isDragging = useRef(false);
 
   const visibleLayersRef = useRef(visibleLayers);
   const haasModeRef = useRef(haasMode);
-  
+
   useEffect(() => {
     visibleLayersRef.current = visibleLayers;
   }, [visibleLayers]);
@@ -285,9 +286,11 @@ const TrafficHeatmapD3 = forwardRef(({
           ctxs.forEach(ctx => ctx.restore());
         });
       });
+    },
+    clearVizzionSelection: () => {
+      setSelectedVizzionPoint(null);
     }
   }), [pointSize, crashSize, dimensions.chartHeight, getContextByType]);
-
   // 4. MAIN RENDER EFFECT
   useEffect(() => {
     if (!gridLayout || !dimensions) return;
@@ -434,73 +437,73 @@ const TrafficHeatmapD3 = forwardRef(({
           .attr("stroke-width", 1);
 
         // --- Horizontal District Boundaries ---
-        // if (districtBoundaryData[route]) {
-        //   const districts = districtBoundaryData[route];
+        if (districtBoundaryData[route]) {
+          const districts = districtBoundaryData[route];
 
-        //   Object.entries(districts).forEach(([name, bounds]) => {
-        //     const sm = parseFloat(bounds.sm);
-        //     const em = parseFloat(bounds.em);
-        //     const color = DISTRICT_COLORS[name] || "#eee";
+          Object.entries(districts).forEach(([name, bounds]) => {
+            const sm = parseFloat(bounds.sm);
+            const em = parseFloat(bounds.em);
+            const color = DISTRICT_COLORS[name] || "#eee";
 
-        //     const minMM = Math.min(startMM, endMM);
-        //     const maxMM = Math.max(startMM, endMM);
+            const minMM = Math.min(startMM, endMM);
+            const maxMM = Math.max(startMM, endMM);
 
-        //     // Fill
-        //     const y1 = yScale(sm);
-        //     const y2 = yScale(em);
-        //     const fillY = Math.min(y1, y2);
-        //     const fillH = Math.abs(y1 - y2);
+            // Fill
+            const y1 = yScale(sm);
+            const y2 = yScale(em);
+            const fillY = Math.min(y1, y2);
+            const fillH = Math.abs(y1 - y2);
 
-        //     const rectY = Math.max(0, fillY);
-        //     const rectH = Math.min(chartHeight - rectY, fillH - (rectY - fillY));
+            const rectY = Math.max(0, fillY);
+            const rectH = Math.min(chartHeight - rectY, fillH - (rectY - fillY));
 
-        //     if (rectH > 0) {
-        //       g.append("rect")
-        //         .attr("class", "district-fill-layer")
-        //         .attr("x", 0)
-        //         .attr("width", chartWidth)
-        //         .attr("y", rectY)
-        //         .attr("height", rectH)
-        //         .attr("fill", color)
-        //         .attr("opacity", 0.6)
-        //         .style("display", districtMode === 1 ? "inline" : "none")
-        //         .style("pointer-events", "none");
-        //     }
+            if (rectH > 0) {
+              g.append("rect")
+                .attr("class", "district-fill-layer")
+                .attr("x", 0)
+                .attr("width", chartWidth)
+                .attr("y", rectY)
+                .attr("height", rectH)
+                .attr("fill", color)
+                .attr("opacity", 0.6)
+                .style("display", districtMode === 1 ? "inline" : "none")
+                .style("pointer-events", "none");
+            }
 
-        //     // Lines and Label
-        //     const lineGroup = g.append("g").attr("class", "district-line-layer")
-        //       .style("display", districtMode > 0 ? "inline" : "none");
+            // Lines and Label
+            const lineGroup = g.append("g").attr("class", "district-line-layer")
+              .style("display", districtMode > 0 ? "inline" : "none");
 
-        //     [sm, em].forEach(loc => {
-        //       if (loc >= minMM && loc <= maxMM) {
-        //         lineGroup.append("line")
-        //           .attr("x1", 0)
-        //           .attr("x2", chartWidth)
-        //           .attr("y1", yScale(loc))
-        //           .attr("y2", yScale(loc))
-        //           .attr("stroke", "#444")
-        //           .attr("stroke-width", 1.5)
-        //           .style("pointer-events", "none");
-        //       }
-        //     });
+            [sm, em].forEach(loc => {
+              if (loc >= minMM && loc <= maxMM) {
+                lineGroup.append("line")
+                  .attr("x1", 0)
+                  .attr("x2", chartWidth)
+                  .attr("y1", yScale(loc))
+                  .attr("y2", yScale(loc))
+                  .attr("stroke", "#444")
+                  .attr("stroke-width", 1.5)
+                  .style("pointer-events", "none");
+              }
+            });
 
-        //     const midMM = (sm + em) / 2;
-        //     if (midMM >= minMM && midMM <= maxMM) {
-        //       lineGroup.append("text")
-        //         .attr("x", 10)
-        //         .attr("y", yScale(midMM))
-        //         .attr("dy", "0.35em")
-        //         .attr("text-anchor", "start")
-        //         .style("font-family", "sans-serif")
-        //         .style("font-size", "0px")
-        //         .style("font-weight", "bold")
-        //         .style("fill", "#222")
-        //         .style("pointer-events", "none")
-        //         .style("text-shadow", "0px 0px 4px rgba(255,255,255,0.9)")
-        //         .text(name);
-        //     }
-        //   });
-        // }
+            const midMM = (sm + em) / 2;
+            if (midMM >= minMM && midMM <= maxMM) {
+              lineGroup.append("text")
+                .attr("x", 10)
+                .attr("y", yScale(midMM))
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "start")
+                .style("font-family", "sans-serif")
+                .style("font-size", "0px")
+                .style("font-weight", "bold")
+                .style("fill", "#222")
+                .style("pointer-events", "none")
+                .style("text-shadow", "0px 0px 4px rgba(255,255,255,0.9)")
+                .text(name);
+            }
+          });
+        }
 
         // --- Horizontal Camera Lines (Pre-rendered, visibility toggled via CSS) ---
         if (cameraLocations.length > 0) {
@@ -589,7 +592,7 @@ const TrafficHeatmapD3 = forwardRef(({
             let isPointHovered = false;
 
             // Check if hovering near a crash point
-            const crashHoverThreshold = (crashSize || 4) ; // Match the specific dynamic drawn size + 2px buffer
+            const crashHoverThreshold = (crashSize || 4); // Match the specific dynamic drawn size + 2px buffer
             let nearbyCrash;
             if (visibleLayersRef.current.crash) {
               nearbyCrash = crashPointsRef.current.find(cp => {
@@ -604,12 +607,12 @@ const TrafficHeatmapD3 = forwardRef(({
               isPointHovered = true;
             }
 
-            const haasHoverThreshold = 5 ; // haas drawn radius is 5, plus 2px buffer
+            const haasHoverThreshold = 5; // haas drawn radius is 5, plus 2px buffer
             let nearbyHaas;
             if (haasModeRef.current > 0) {
               nearbyHaas = haasPointsRef.current.find(hp => {
                 const isActive = hp.is_active === 1 || hp.is_active === true;
-                
+
                 if (haasModeRef.current === 1 && !isActive) return false;
                 if (haasModeRef.current === 3 && isActive) return false;
 
@@ -618,7 +621,7 @@ const TrafficHeatmapD3 = forwardRef(({
                 return Math.sqrt(dx * dx + dy * dy) <= haasHoverThreshold;
               });
             }
-            
+
             if (nearbyHaas) {
               content = `HAAS Points\nDevice Name: ${nearbyHaas.device_name}\nTimestamp: ${formatTimeUTC(nearbyHaas.time)}\nMM: ${nearbyHaas.mm}\nActive: ${nearbyHaas.is_active === 1 || nearbyHaas.is_active === true ? 'Yes' : 'No'}\nSpeed: ${nearbyHaas.speed}\nType: ${nearbyHaas.type}\nThing Name: ${nearbyHaas.thingname}`;
               isPointHovered = true;
@@ -632,7 +635,7 @@ const TrafficHeatmapD3 = forwardRef(({
                 return Math.sqrt(dx * dx + dy * dy) <= haasHoverThreshold;
               });
             }
-            
+
             if (nearbyHaasLocation) {
               const startTime = new Date(nearbyHaasLocation.start_bin * 1000);
               const endTime = new Date(nearbyHaasLocation.end_bin * 1000);
@@ -681,6 +684,7 @@ const TrafficHeatmapD3 = forwardRef(({
               });
 
               if (clickedVizzion && onVizzionClick) {
+                setSelectedVizzionPoint(clickedVizzion);
                 onVizzionClick(clickedVizzion);
               }
             }
@@ -918,15 +922,50 @@ const TrafficHeatmapD3 = forwardRef(({
       <div style={{ display: "flex", width: "100%" }}>
         {/* DIRECTIONS SIDEBAR */}
         <div style={{
-          width: "60px", flexShrink: 0, backgroundColor: "#ffffffff", borderRight: "1px solid #ddd", borderRadius: "20px 0 0 0", paddingTop: margin.top, display: "flex", flexDirection: "column", alignItems: "center"
+          width: "80px", flexShrink: 0, backgroundColor: "#ffffffff", borderRight: "1px solid #ddd", borderRadius: "20px 0 0 0", paddingTop: margin.top, display: "flex", flexDirection: "column", alignItems: "center"
         }}>
-          {gridLayout?.directions.map((dir, i) => (
-            <div key={i} style={{
-              height: rowFullHeight, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "25px", color: "#444"
-            }}>
-              {dir}
-            </div>
-          ))}
+          {gridLayout?.directions.map((dir, i) => {
+            // First row = UP arrow, Second row = DOWN arrow
+            const arrow = i === 0 ? '↑' : '↓';
+
+            return (
+              <div key={i} style={{
+                height: rowFullHeight,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <div style={{
+                  fontWeight: "bold",
+                  fontSize: "35px",
+                  color: "#444"
+                }}>
+                  {dir}
+                </div>
+                <div style={{
+                  fontSize: "70px",
+                  color: "#000000",
+                  marginTop: "-15px",
+                  fontWeight: "bold",
+                  lineHeight: "1"
+                }}>
+                  {arrow}
+                </div>
+                <div style={{
+                  fontSize: "10px",
+                  color: "#000000",
+                  marginTop: "2px",
+                  textAlign: "center",
+                  lineHeight: "1.2",
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap"
+                }}>
+                  DIRECTION OF<br />TRAVEL
+                </div>
+              </div>
+            );
+          })}
           <div style={{ height: sliderHeight }} />
         </div>
 
@@ -1013,6 +1052,22 @@ const TrafficHeatmapD3 = forwardRef(({
                     boxShadow: '0 2px 5px rgba(0,0,0,0.3)', cursor: 'grab', zIndex: 2
                   }} onMouseDown={handleDragStart} />
                 </div>
+                {/* SELECTED VIZZION DOT INDICATOR */}
+                {selectedVizzionPoint && (
+                  <div style={{
+                    position: 'absolute',
+                    left: selectedVizzionPoint.x - 8,
+                    top: selectedVizzionPoint.y - 8,
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    border: '3px solid #007bff',
+                    backgroundColor: 'transparent',
+                    pointerEvents: 'none',
+                    zIndex: 15,
+                    boxShadow: '0 0 0 2px white, 0 0 8px rgba(0,123,255,0.6)'
+                  }} />
+                )}
               </>
             )}
           </div>
@@ -1024,7 +1079,7 @@ const TrafficHeatmapD3 = forwardRef(({
       {tooltip.visible && (
         <div style={{
           position: "fixed", left: tooltip.x, top: tooltip.y,
-          backgroundColor: tooltip.isPoint ? "white" : "rgba(33, 37, 41, 0.9)", 
+          backgroundColor: tooltip.isPoint ? "white" : "rgba(33, 37, 41, 0.9)",
           color: tooltip.isPoint ? "black" : "white",
           padding: "6px 10px", borderRadius: "4px", fontSize: "12px",
           fontWeight: "500", pointerEvents: "none", zIndex: 9999,

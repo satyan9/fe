@@ -230,7 +230,7 @@ const HeatmapForm = ({
                   {draftFormState.timezone || "EST"}
                 </button>
                 <ul className="dropdown-menu shadow-sm" style={{ maxHeight: "200px", overflowY: "auto" }}>
-                  {["EST", "EDT", "CST", "CDT", "MST", "MDT", "PST", "PDT", "HST", "HDT"].map((tz) => (
+                  {["EST", "EDT", "CST", "CDT", "MST", "MDT", "PST", "PDT", "HST", "HDT", "UTC"].map((tz) => (
                     <li key={tz}>
                       <button
                         className="dropdown-item"
