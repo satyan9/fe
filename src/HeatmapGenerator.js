@@ -758,7 +758,7 @@ const HeatmapGenerator = () => {
                     <span className="fw-semibold">Toggle layers:</span>
                     {(appliedFormState.state === "IN"
                       ? ["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines", "exits", "districts", "crash", "haas"]
-                      : ["car", "truck", "accel", "decel", "vizzion", "exits", "districts"]
+                      : ["car", "truck", "accel", "decel", "vizzion", "exits"]
                     ).map((k) => (
                       <div
                         key={k}
@@ -901,7 +901,7 @@ const HeatmapGenerator = () => {
                     ))}
                   </div>
                   {/* boundary color data print */}
-                  {/* {districtMode === 1 && districtBoundaryData[appliedFormState.route] && (
+                  {districtMode === 1 && districtBoundaryData[appliedFormState.route] && (
                     <div className="d-flex align-items-center gap-3 flex-nowrap border-start ps-3">
                       <span className="fw-semibold small">Districts:</span>
                       {Object.keys(districtBoundaryData[appliedFormState.route]).map((name) => (
@@ -919,11 +919,11 @@ const HeatmapGenerator = () => {
                         </div>
                       ))}
                     </div>
-                  )} */}
+                  )}
                 </div>
               </TrafficHeatmapD3>
 
-              {/* {loading && <div style={{ position: "absolute", top: 10, right: 10 }}>Loading...</div>} */}
+              {loading && <div style={{ position: "absolute", top: 10, right: 10 }}>Loading...</div>}
             </div>
 
             <div className="mt-4 px-3 p-3 bg-white border rounded shadow-sm">
