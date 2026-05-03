@@ -957,7 +957,7 @@ const HeatmapGenerator = () => {
                 <div className="vizzion-viewer d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '300px' }}>
                   {vizzionLoading ? (
                     <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
+                      {/* <span className="visually-hidden">Loading...</span> */}
                     </div>
                   ) : vizzionImages.length > 0 ? (
                     <div className="w-100 d-flex flex-column align-items-center position-relative">
