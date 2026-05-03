@@ -923,7 +923,7 @@ const HeatmapGenerator = () => {
                 </div>
               </TrafficHeatmapD3>
 
-              {loading && <div style={{ position: "absolute", top: 10, right: 10 }}>Loading...</div>}
+              {/* {loading && <div style={{ position: "absolute", top: 10, right: 10 }}>Loading...</div>} */}
             </div>
 
             <div className="mt-4 px-3 p-3 bg-white border rounded shadow-sm">
