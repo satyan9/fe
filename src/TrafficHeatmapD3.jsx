@@ -28,7 +28,6 @@ const DISTRICT_COLORS = {
 // Removed hardcoded ROUTE_DIRECTIONS_IN in favor of RouteConfig
 
 
-
 const getColor = (mph) => {
   if (mph === null || mph === undefined) return COLOR_NO_DATA;
   for (let bucket of SPEED_COLORS) { if (mph < bucket.max) return bucket.color; }
@@ -70,6 +69,7 @@ const TrafficHeatmapD3 = forwardRef(({
   const haasPointsRef = useRef([]);
   const haasLocationPointsRef = useRef([]);
   const vizzionPointsRef = useRef([]);
+  const geoDataRef = useRef([]);
 
   // Store drawing context (scales, dims) to use in imperative handle
   const drawContextRef = useRef(null);
@@ -196,6 +196,9 @@ const TrafficHeatmapD3 = forwardRef(({
               const actualRectH = (d.mmStep / 0.1) * rectH + 1.0;
               // Center the rectangle on the time bin and mile marker
               ctx.fillRect(x, y - (actualRectH / 2), actualRectW, actualRectH);
+              if (d.lat && d.lon) {
+                geoDataRef.current.push({ x, y, lat: d.lat, lon: d.lon });
+              }
             } else if (d.event_type === 'vizzion') {
               // Vizzion Drives: conditional color
               let color = "gray";
@@ -317,6 +320,7 @@ const TrafficHeatmapD3 = forwardRef(({
     haasPointsRef.current = [];
     haasLocationPointsRef.current = [];
     vizzionPointsRef.current = [];
+    geoDataRef.current = [];
 
     // --- SETUP CANVASES ---
     const dpr = window.devicePixelRatio || 1;
@@ -692,7 +696,28 @@ const TrafficHeatmapD3 = forwardRef(({
           .on("mouseout", () => {
             setTooltip(t => ({ ...t, visible: false }));
             cursorCircle.style("opacity", 0);
-          });
+          })
+          .on("contextmenu", (event) => {
+            event.preventDefault();
+            const [px, py] = d3.pointer(event);
+            const absX = xOffset + px;
+            const absY = yOffset + py;
+            
+            let nearest = null;
+            let minDist = Infinity;
+            
+            geoDataRef.current.forEach(pt => {
+              const dist = Math.sqrt((pt.x - absX) ** 2 + (pt.y - absY) ** 2);
+              if (dist < minDist) {
+                minDist = dist;
+                nearest = pt;
+              }
+            });
+            
+            if (nearest && nearest.lat && nearest.lon) {
+              window.open(`https://www.google.com/maps?q=${nearest.lat},${nearest.lon}`, '_blank');
+            }
+          })
       });
     });
 
@@ -748,6 +773,9 @@ const TrafficHeatmapD3 = forwardRef(({
               const actualRectH = (d.mmStep / 0.1) * rectH + 1.0;
               // Center the rectangle on the time bin and mile marker
               ctx.fillRect(x, y - (actualRectH / 2), actualRectW, actualRectH);
+              if (d.lat && d.lon) {
+                geoDataRef.current.push({ x, y, lat: d.lat, lon: d.lon });
+              }
             } else if (d.event_type === 'vizzion') {
               let color = "gray";
               if (d.val === 1) color = "blue";

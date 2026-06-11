@@ -20,7 +20,7 @@ const getDefaultTimezone = () => {
   const now = new Date();
   const year = now.getFullYear();
   const dstStart = getNthSunday(year, 2, 2);  // 2nd Sunday of March
-  const dstEnd   = getNthSunday(year, 10, 1); // 1st Sunday of November
+  const dstEnd = getNthSunday(year, 10, 1); // 1st Sunday of November
   return now >= dstStart && now < dstEnd ? "EDT" : "EST";
 };
 
@@ -208,6 +208,8 @@ const HeatmapGenerator = () => {
         normalizedDir: dir,
         val: row.val,
         mrn: row.mrn,
+        lat: row.lat,
+        lon: row.lon,
         is_active: row.is_active,
         speed: row.speed,
         device_name: row.device_name,
@@ -654,7 +656,7 @@ const HeatmapGenerator = () => {
     const endDay = dayjs(end_date);
     const daysDiff = endDay.diff(startDay, 'day');
 
- if (daysDiff > 60) {
+    if (daysDiff > 60) {
       alert('Error: Date range cannot exceed 60 days (2 months). Please select a shorter time period.\n\nFor longer date ranges, please contact:\n• darcy@purdue.edu\n• rsakhare@purdue.edu');
       return; // Stop execution
     }
