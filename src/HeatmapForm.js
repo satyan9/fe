@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { DatePicker as MUIDatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { ROUTE_OPTIONS, ROUTE_IMAGES, ROUTE_MM_LIMITS } from "./RouteConfig";
@@ -12,6 +12,75 @@ const HeatmapForm = ({
   handleInputChange,
   handleSubmit,
 }) => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams({
+        state: draftFormState.state,
+        roadName: draftFormState.route,
+        startDate: draftFormState.start_date,
+        endDate: draftFormState.end_date,
+        startmm: draftFormState.start_mm,
+        endmm: draftFormState.end_mm,
+        timezone: draftFormState.timezone || 'EST'
+      });
+
+      const url = `http://localhost:5000/api/heatmap/export?${params.toString()}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!data.directions || Object.keys(data.directions).length === 0) {
+        alert('No data found for the selected range.');
+        return;
+      }
+
+      // Map route suffix (E/W/N/S/IL/OL) to Darcy's codes (EB/WB/NB/SB/IL/OL)
+      const dirCodeMap = { E: 'EB', W: 'WB', N: 'NB', S: 'SB', IL: 'IL', OL: 'OL' };
+
+      // Interstate number, e.g. "I-70" -> "70"
+      const interstateNum = String(draftFormState.route).replace(/[^0-9]/g, '');
+
+      // Integer MMs
+      const startMMInt = Math.round(parseFloat(draftFormState.start_mm));
+      const endMMInt = Math.round(parseFloat(draftFormState.end_mm));
+
+      // Dates as YYYY_MM_DD
+      const fmtDate = (d) => d.replaceAll('-', '_');
+      const startD = fmtDate(draftFormState.start_date);
+      const endD = fmtDate(draftFormState.end_date);
+
+      // One download per direction
+      Object.entries(data.directions).forEach(([dirFull, rows], idx) => {
+        const suffix = dirFull.trim().split(' ').pop();
+        const dirCode = dirCodeMap[suffix] || suffix;
+
+        let csv = 'MM,Date,Hour,Car_Speed,Truck_Speed\n';
+        rows.forEach(r => {
+          csv += `${r.mm},${r.date},${r.hour},${r.car_speed},${r.truck_speed}\n`;
+        });
+
+        const filename = `${interstateNum}_${startMMInt}_${endMMInt}_${dirCode}_${startD}_${endD}.csv`;
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        setTimeout(() => {
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }, idx * 300);
+      });
+
+    } catch (error) {
+      alert('Error downloading file: ' + error.message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // ⭐ Universal MM Limiter for Start & End Inputs
   const handleInputChangeEnhanced = (e) => {
@@ -355,6 +424,19 @@ const HeatmapForm = ({
                 value={draftFormState.crash_size}
                 onChange={handleInputChange}
               />
+            </div>
+
+            {/* Export button */}
+            <div className="col d-flex align-items-end">
+              <button
+                type="button"
+                className="btn btn-success w-100 fw-semibold btn-sm"
+                style={{ fontSize: "0.8rem" }}
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                {isExporting ? "Downloading..." : "Export CSV"}
+              </button>
             </div>
 
             {/* Submit button */}
