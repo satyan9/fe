@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { DatePicker as MUIDatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import { ROUTE_OPTIONS, ROUTE_IMAGES, ROUTE_MM_LIMITS } from "./RouteConfig";
+import { ROUTE_OPTIONS, ROUTE_IMAGES, ROUTE_MM_LIMITS, ROUTE_DIRECTIONS } from "./RouteConfig";
 // line 348 for crash size input
 
 const STATE_OPTIONS = ["IN", "AR", "AL", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"];
@@ -14,67 +14,59 @@ const HeatmapForm = ({
 }) => {
   const [isExporting, setIsExporting] = useState(false);
 
+  const getExportDirections = (state, route) => {
+    try {
+      const stateDirs = (ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN']) || {};
+      return stateDirs[route] || ["E", "W"];
+    } catch {
+      return ["E", "W"];
+    }
+  };
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const params = new URLSearchParams({
-        state: draftFormState.state,
-        roadName: draftFormState.route,
-        startDate: draftFormState.start_date,
-        endDate: draftFormState.end_date,
-        startmm: draftFormState.start_mm,
-        endmm: draftFormState.end_mm,
-        timezone: draftFormState.timezone || 'EST'
-      });
-
-      const url = `http://localhost:5000/api/heatmap/export?${params.toString()}`;
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (!data.directions || Object.keys(data.directions).length === 0) {
-        alert('No data found for the selected range.');
-        return;
-      }
-
-      // Map route suffix (E/W/N/S/IL/OL) to Darcy's codes (EB/WB/NB/SB/IL/OL)
       const dirCodeMap = { E: 'EB', W: 'WB', N: 'NB', S: 'SB', IL: 'IL', OL: 'OL' };
-
-      // Interstate number, e.g. "I-70" -> "70"
       const interstateNum = String(draftFormState.route).replace(/[^0-9]/g, '');
-
-      // Integer MMs
       const startMMInt = Math.round(parseFloat(draftFormState.start_mm));
       const endMMInt = Math.round(parseFloat(draftFormState.end_mm));
-
-      // Dates as YYYY_MM_DD
       const fmtDate = (d) => d.replaceAll('-', '_');
       const startD = fmtDate(draftFormState.start_date);
       const endD = fmtDate(draftFormState.end_date);
 
-      // One download per direction
-      Object.entries(data.directions).forEach(([dirFull, rows], idx) => {
-        const suffix = dirFull.trim().split(' ').pop();
-        const dirCode = dirCodeMap[suffix] || suffix;
+      const dirs = getExportDirections(draftFormState.state, draftFormState.route);
 
-        let csv = 'MM,Date,Hour,Car_Speed,Truck_Speed\n';
-        rows.forEach(r => {
-          csv += `${r.mm},${r.date},${r.hour},${r.car_speed},${r.truck_speed}\n`;
+      for (let i = 0; i < dirs.length; i++) {
+        const dirSuffix = dirs[i];
+        const fullDir = `${draftFormState.route} ${dirSuffix}`;
+        const dirCode = dirCodeMap[dirSuffix] || dirSuffix;
+
+        const params = new URLSearchParams({
+          state: draftFormState.state,
+          roadName: draftFormState.route,
+          startDate: draftFormState.start_date,
+          endDate: draftFormState.end_date,
+          startmm: draftFormState.start_mm,
+          endmm: draftFormState.end_mm,
+          timezone: draftFormState.timezone || 'EST',
+          direction: fullDir
         });
 
+        const url = `https://tmc-backend-607020806390.us-central1.run.app/api/heatmap/export?${params.toString()}`;
         const filename = `${interstateNum}_${startMMInt}_${endMMInt}_${dirCode}_${startD}_${endD}.csv`;
 
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const response = await fetch(url);
+        const blob = await response.blob();
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = filename;
         document.body.appendChild(link);
-        setTimeout(() => {
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-        }, idx * 300);
-      });
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
 
+        await new Promise(r => setTimeout(r, 400));
+      }
     } catch (error) {
       alert('Error downloading file: ' + error.message);
     } finally {
