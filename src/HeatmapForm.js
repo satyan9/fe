@@ -52,7 +52,7 @@ const HeatmapForm = ({
           direction: fullDir
         });
 
-        const url = `https://tmc-backend-607020806390.us-central1.run.app/api/heatmap/export?${params.toString()}`;
+        const url = `http://localhost:13340/api/heatmap/export?${params.toString()}`;
         const filename = `${interstateNum}_${startMMInt}_${endMMInt}_${dirCode}_${startD}_${endD}.csv`;
 
         const response = await fetch(url);
