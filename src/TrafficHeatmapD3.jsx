@@ -54,6 +54,7 @@ const TrafficHeatmapD3 = forwardRef(({
   // Separate canvases for each layer to allow instant CSS toggling
   const carCanvasRef = useRef();
   const truckCanvasRef = useRef();
+  const compassiotCanvasRef = useRef();
   const accelCanvasRef = useRef();
   const decelCanvasRef = useRef();
   const vizzionCanvasRef = useRef();
@@ -127,6 +128,7 @@ const TrafficHeatmapD3 = forwardRef(({
   const getContextByType = useCallback((type) => {
     if (type === 'car') return carCanvasRef.current?.getContext('2d');
     if (type === 'truck') return truckCanvasRef.current?.getContext('2d');
+    if (type === 'compassiot') return compassiotCanvasRef.current?.getContext('2d');
     if (type === 'accel') return accelCanvasRef.current?.getContext('2d');
     if (type === 'decel') return decelCanvasRef.current?.getContext('2d');
     if (type === 'vizzion') return vizzionCanvasRef.current?.getContext('2d');
@@ -163,6 +165,7 @@ const TrafficHeatmapD3 = forwardRef(({
           const ctxs = [
             carCanvasRef.current?.getContext('2d'),
             truckCanvasRef.current?.getContext('2d'),
+            compassiotCanvasRef.current?.getContext('2d'),
             accelCanvasRef.current?.getContext('2d'),
             decelCanvasRef.current?.getContext('2d'),
             vizzionCanvasRef.current?.getContext('2d'),
@@ -187,7 +190,7 @@ const TrafficHeatmapD3 = forwardRef(({
             if (!ctx) return;
 
             // We draw regardless of 'visibleLayers' here. Visibility is handled by CSS.
-            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'inrix' || d.event_type === 'poly') {
+            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'compassiot' || d.event_type === 'inrix' || d.event_type === 'poly') {
               ctx.fillStyle = getColor(d.mph);
               const x = xOffset + hourScale(d.decimalHour);
               const y = yOffset + yScale(d.mm);
@@ -339,6 +342,7 @@ const TrafficHeatmapD3 = forwardRef(({
 
     const ctxCar = setupCanvas(carCanvasRef);
     const ctxTruck = setupCanvas(truckCanvasRef);
+    const ctxCompassiot = setupCanvas(compassiotCanvasRef);
     const ctxAccel = setupCanvas(accelCanvasRef);
     const ctxDecel = setupCanvas(decelCanvasRef);
     const ctxVizzion = setupCanvas(vizzionCanvasRef);
@@ -738,7 +742,7 @@ const TrafficHeatmapD3 = forwardRef(({
           const cellData = groupedData[dayStr][dir];
 
           // Define all available contexts to apply clipping
-          const ctxs = [ctxCar, ctxTruck, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly, ctxCrash, ctxHaasActive, ctxHaasInactive].filter(Boolean);
+          const ctxs = [ctxCar, ctxTruck, ctxCompassiot, ctxAccel, ctxDecel, ctxVizzion, ctxInrix, ctxPoly, ctxCrash, ctxHaasActive, ctxHaasInactive].filter(Boolean);
 
           // Apply clipping to each canvas for this specific cell
           ctxs.forEach(ctx => {
@@ -753,6 +757,7 @@ const TrafficHeatmapD3 = forwardRef(({
             let ctx = null;
             if (d.event_type === 'car') ctx = ctxCar;
             else if (d.event_type === 'truck') ctx = ctxTruck;
+            else if (d.event_type === 'compassiot') ctx = ctxCompassiot;
             else if (d.event_type === 'accel') ctx = ctxAccel;
             else if (d.event_type === 'decel') ctx = ctxDecel;
             else if (d.event_type === 'vizzion') ctx = ctxVizzion;
@@ -764,7 +769,7 @@ const TrafficHeatmapD3 = forwardRef(({
 
             if (!ctx) return;
 
-            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'inrix' || d.event_type === 'poly') {
+            if (d.event_type === 'car' || d.event_type === 'truck' || d.event_type === 'compassiot' || d.event_type === 'inrix' || d.event_type === 'poly') {
               ctx.fillStyle = getColor(d.mph);
               const x = xOffset + hourScale(d.decimalHour);
               const y = yOffset + yScale(d.mm);
@@ -1007,12 +1012,15 @@ const TrafficHeatmapD3 = forwardRef(({
             {/* LAYER 2: TRUCK */}
             <canvas ref={truckCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 2, display: visibleLayers.truck ? 'block' : 'none' }} />
 
+           {/* LAYER: COMPASSIOT */}
+            <canvas ref={compassiotCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 2, display: visibleLayers.compassiot ? 'block' : 'none' }} />
+
             {/* LAYER 3: ACCEL (Blue) */}
             <canvas ref={accelCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 3, display: visibleLayers.accel ? 'block' : 'none' }} />
 
             {/* LAYER 4: DECEL (Black) */}
             <canvas ref={decelCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 4, display: visibleLayers.decel ? 'block' : 'none' }} />
-
+            
             {/* LAYER V: VIZZION (Brown) */}
             <canvas ref={vizzionCanvasRef} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none", zIndex: 4, display: visibleLayers.vizzion ? 'block' : 'none' }} />
 

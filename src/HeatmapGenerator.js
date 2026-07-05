@@ -85,6 +85,7 @@ const HeatmapGenerator = () => {
   const [visibleLayers, setVisibleLayers] = useState({
     car: true,
     truck: true,
+    compassiot: false,
     accel: false,
     decel: false,
     vizzion: false,
@@ -103,12 +104,6 @@ const HeatmapGenerator = () => {
   const [vizzionImages, setVizzionImages] = useState([]);
   const [vizzionLoading, setVizzionLoading] = useState(false);
   const [vizzionCurrentIdx, setVizzionCurrentIdx] = useState(0);
-
-  const getBaseUrlForType = (type) => {
-    if (type === "car") return "http://localhost:13341";
-    if (type === "truck" || type === "haas" || type === "haas_location" || type === "compassiot") return "http://localhost:13342";
-    return "http://localhost:13340";
-  };
 
   const handleVizzionClick = useCallback(async (point) => {
     setMediaMode("vizzion");
@@ -376,7 +371,7 @@ const HeatmapGenerator = () => {
     const stateDirections = ROUTE_DIRECTIONS[state] || ROUTE_DIRECTIONS['IN'];
     const directions = stateDirections[route] || ["E", "W"];
 
-    const types = ["inrix", "car", "truck", "events", "vizzion", "poly", "crash", "haas", "haas_location"]; // add crash after
+    const types = ["inrix", "car", "truck", "compassiot", "events", "vizzion", "poly", "crash", "haas", "haas_location"]; // add crash after
     // setProgress({ completed: 0, total: totalTasks });
 
     let totalCost = 0;
@@ -413,7 +408,7 @@ const HeatmapGenerator = () => {
               const processResponse = async (formData, urlOverride) => {
                 await fetchData(
                   urlOverride ||
-                  `${getBaseUrlForType(type)}/generate_heatmap_${type}`,
+                  `http://localhost:13340/generate_heatmap_${type}`,
                   formData,
                   signal,
                   async (dataChunk) => {
@@ -456,7 +451,17 @@ const HeatmapGenerator = () => {
                   .add(1, "day")
                   .format("YYYY-MM-DD");
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
-                const url = `${getBaseUrlForType(type)}/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const port = type === "car" ? 13341 : 13342;
+                const url = `http://localhost:${port}/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                await processResponse(null, url);
+              } else if (type === "compassiot") {
+                const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
+                const roadName = `${formattedRoute} ${dir}`;
+                const { timezone } = stateToUse;
+                const endDatePayload = dayjs(chunkEnd)
+                  .add(1, "day")
+                  .format("YYYY-MM-DD");
+                const url = `http://localhost:13342/api/heatmap/getMiles_compassiot/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "inrix") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -464,7 +469,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `${getBaseUrlForType("inrix")}/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:13340/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "poly") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -472,7 +477,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `${getBaseUrlForType("poly")}/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:13340/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "vizzion") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -501,13 +506,13 @@ const HeatmapGenerator = () => {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `${getBaseUrlForType("haas")}/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:13342/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "haas_location") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `${getBaseUrlForType("haas_location")}/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:13342/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else {
                 // Events
@@ -636,7 +641,7 @@ const HeatmapGenerator = () => {
         });
       }
       if (key === "G") setVisibleLayers((p) => ({ ...p, inrix: !p.inrix }));
-      if (key === "F") setVisibleLayers((p) => ({ ...p, poly: !p.poly }));
+      if (key === "I") setVisibleLayers((p) => ({ ...p, compassiot: !p.compassiot }));
       if (key === "C") setVisibleLayers((p) => ({ ...p, crash: !p.crash }));
       if (key === "H") setHaasMode(prev => { const next = (prev + 1) % 4; setVisibleLayers(p => ({ ...p, haas: next > 0 })); return next; });
     };
@@ -765,8 +770,8 @@ const HeatmapGenerator = () => {
                   <div className="d-flex align-items-center gap-3 flex-nowrap">
                     <span className="fw-semibold">Toggle layers:</span>
                     {(appliedFormState.state === "IN"
-                      ? ["inrix", "car", "truck", "accel", "decel", "vizzion", "poly", "lines", "exits", "districts", "crash", "haas"]
-                      : ["car", "truck", "accel", "decel", "vizzion", "exits"]
+                      ? ["inrix", "car", "truck", "compassiot", "accel", "decel", "vizzion", "poly", "lines", "exits", "districts", "crash", "haas"]
+                      : ["car", "truck", "compassiot", "accel", "decel", "vizzion", "exits"]
                     ).map((k) => (
                       <div
                         key={k}
@@ -800,13 +805,15 @@ const HeatmapGenerator = () => {
                                         ? "bg-brown"
                                         : k === "inrix"
                                           ? "bg-info"
-                                          : k === "poly"
-                                            ? "bg-purple"
-                                            : k === "crash"
-                                              ? "bg-dark"
-                                              : k === "haas"
-                                                ? "bg-info"
-                                                : "bg-secondary"
+                                          : k === "compassiot"
+                                            ? "bg-dark"
+                                            : k === "poly"
+                                              ? "bg-purple"
+                                              : k === "crash"
+                                                ? "bg-dark"
+                                                : k === "haas"
+                                                  ? "bg-info"
+                                                  : "bg-secondary"
                               : "bg-secondary"
                             } fs-6 px-3 py-2`}
                         >
@@ -822,13 +829,15 @@ const HeatmapGenerator = () => {
                                     ? "Z"
                                     : k === "inrix"
                                       ? "G"
-                                      : k === "poly"
-                                        ? "F"
-                                        : k === "crash"
-                                          ? "C"
-                                          : k === "haas"
-                                            ? "H"
-                                            : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
+                                      : k === "compassiot"
+                                        ? "I"
+                                        : k === "poly"
+                                          ? "F"
+                                          : k === "crash"
+                                            ? "C"
+                                            : k === "haas"
+                                              ? "H"
+                                              : k === "lines" ? "L" : k === "exits" ? "E" : "R"}
                         </kbd>
 
                         <span
@@ -839,22 +848,24 @@ const HeatmapGenerator = () => {
                           }
                         >
                           {k === "lines"
-                            ? "Cam Lines"
+                            ? "Cams"
                             : k === "exits"
-                              ? "Exit Lines"
+                              ? "Exits"
                               : k === "vizzion"
                                 ? "Vizzion"
                                 : k === "inrix"
-                                  ? "Inrix Data"
-                                  : k === "poly"
-                                    ? "Poly inrix"
-                                    : k === "crash"
-                                      ? "Crash"
-                                      : k === "haas"
-                                        ? haasMode === 0 ? "HAAS Off" : haasMode === 1 ? "HAAS Active" : haasMode === 2 ? "HAAS All" : "HAAS Inactive"
-                                        : k === "districts"
-                                          ? "Districts"
-                                          : k.charAt(0).toUpperCase() + k.slice(1)}
+                                  ? "Inrix"
+                                  : k === "compassiot"
+                                    ? "IOT"
+                                    : k === "poly"
+                                      ? "Poly inrix"
+                                      : k === "crash"
+                                        ? "Crash"
+                                        : k === "haas"
+                                          ? haasMode === 0 ? "HAAS Off" : haasMode === 1 ? "HAAS Active" : haasMode === 2 ? "HAAS All" : "HAAS Inactive"
+                                          : k === "districts"
+                                            ? "Districts"
+                                            : k.charAt(0).toUpperCase() + k.slice(1)}
                         </span>
 
                       </div>
