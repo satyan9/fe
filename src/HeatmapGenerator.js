@@ -112,7 +112,7 @@ const HeatmapGenerator = () => {
     setVizzionCurrentIdx(0);
     try {
       const { vehicleid, original_time, mm, state, full_route } = point;
-      const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/get_vizzion_images?vehicleid=${encodeURIComponent(vehicleid)}&time=${encodeURIComponent(original_time)}&mm=${encodeURIComponent(mm)}&state=${encodeURIComponent(state || appliedFormState.state)}&route=${encodeURIComponent(full_route || appliedFormState.route)}&timezone=${encodeURIComponent(appliedFormState.timezone || 'EST')}`;
+      const url = `http://localhost:5000/api/get_vizzion_images?vehicleid=${encodeURIComponent(vehicleid)}&time=${encodeURIComponent(original_time)}&mm=${encodeURIComponent(mm)}&state=${encodeURIComponent(state || appliedFormState.state)}&route=${encodeURIComponent(full_route || appliedFormState.route)}&timezone=${encodeURIComponent(appliedFormState.timezone || 'EST')}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data && data.images) {
@@ -333,7 +333,7 @@ const HeatmapGenerator = () => {
     const end_mm = stateToUse.end_mm;
     const state = stateToUse.state;
 
-    const cameraUrl = `https://tmc-backend-v3-607020806390.us-central1.run.app/get_camera_locations?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
+    const cameraUrl = `http://localhost:5000/get_camera_locations?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
     fetch(cameraUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -357,7 +357,7 @@ const HeatmapGenerator = () => {
       .catch((err) => console.error("Error fetching cameras:", err));
 
     // Fetch Exit Lines
-    const exitLinesUrl = `https://tmc-backend-v3-607020806390.us-central1.run.app/get_exit_lines?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
+    const exitLinesUrl = `http://localhost:5000/get_exit_lines?state=${state}&route=${route}&start_mile=${start_mm}&end_mile=${end_mm}`;
     fetch(exitLinesUrl)
       .then((res) => res.json())
       .then((data) => {
@@ -408,7 +408,7 @@ const HeatmapGenerator = () => {
               const processResponse = async (formData, urlOverride) => {
                 await fetchData(
                   urlOverride ||
-                  `https://tmc-backend-v3-607020806390.us-central1.run.app/generate_heatmap_${type}`,
+                  `http://localhost:5000/generate_heatmap_${type}`,
                   formData,
                   signal,
                   async (dataChunk) => {
@@ -451,7 +451,7 @@ const HeatmapGenerator = () => {
                   .add(1, "day")
                   .format("YYYY-MM-DD");
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
-                const port = type === "car" ? 13341 : 13342;
+                const port = 5000;
                 const url = `http://localhost:${port}/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "compassiot") {
@@ -461,7 +461,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/heatmap/getMiles_compassiot/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getMiles_compassiot/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "inrix") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -469,7 +469,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getMiles_inrix/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "poly") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -477,7 +477,7 @@ const HeatmapGenerator = () => {
                 const endDatePayload = dayjs(chunkEnd)
                   .add(1, "day")
                   .format("YYYY-MM-DD");
-                const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getMiles_poly/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "vizzion") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
@@ -506,13 +506,13 @@ const HeatmapGenerator = () => {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getHaas/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "haas_location") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
                 const { timezone } = stateToUse;
                 const endDatePayload = dayjs(chunkEnd).add(1, "day").format("YYYY-MM-DD");
-                const url = `https://tmc-backend-v3-607020806390.us-central1.run.app/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/getHaasLocation/${state}/${formattedRoute} ${dir}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else {
                 // Events
