@@ -451,8 +451,7 @@ const HeatmapGenerator = () => {
                   .add(1, "day")
                   .format("YYYY-MM-DD");
                 const endpoint = type === "car" ? "getMiles" : "getMiles_truck";
-                const port = 5000;
-                const url = `http://localhost:${port}/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
+                const url = `http://localhost:5000/api/heatmap/${endpoint}/${state}/${roadName}/${chunkStart}/${endDatePayload}/${start_mm}/${end_mm}/${timezone}`;
                 await processResponse(null, url);
               } else if (type === "compassiot") {
                 const formattedRoute = route.startsWith('I-') ? route : route.replace('I', 'I-');
