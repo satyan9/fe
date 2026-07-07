@@ -45,7 +45,14 @@ const DEFAULT_FORM_STATE = {
 const REST_API_URL = process.env.REACT_APP_REST_API_URL || "http://localhost:13340";
 const CAR_API_URL = process.env.REACT_APP_CAR_API_URL || "http://localhost:13341";
 const TRUCK_API_URL = process.env.REACT_APP_TRUCK_API_URL || "http://localhost:13342";
-const INRIX_API_URL = process.env.REACT_APP_INRIX_API_URL || "http://localhost:13343";
+const INRIX_API_URL = process.env.REACT_APP_INRIX_API_URL || process.env.REACT_APP_INRIX_HAAS_API_URL || "http://localhost:13343";
+
+console.log("Heatmap API Config:", {
+  REST_API_URL,
+  CAR_API_URL,
+  TRUCK_API_URL,
+  INRIX_API_URL
+});
 
 const DISTRICT_COLORS = {
   'Crawfordsville': 'rgb(231, 239, 249)',
