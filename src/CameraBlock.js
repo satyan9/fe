@@ -22,7 +22,8 @@ const CameraBlock = ({ mm, route, timestamp, color, allMMs, onMMChange, state })
       const mileParam = parseFloat(mm).toFixed(1);
 
       // Ensure this URL matches your backend
-      const url = `http://localhost:5000/get-images?timestamp=${formattedTime}&road=${route}&mile=${mileParam}&state=${state || 'IN'}`;
+      const restApiUrl = process.env.REACT_APP_REST_API_URL || "http://localhost:13340";
+      const url = `${restApiUrl}/get-images?timestamp=${formattedTime}&road=${route}&mile=${mileParam}&state=${state || 'IN'}`;
 
       fetch(url)
         .then((res) => res.json())

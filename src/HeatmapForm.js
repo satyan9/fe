@@ -52,7 +52,8 @@ const HeatmapForm = ({
           direction: fullDir
         });
 
-        const url = `http://localhost:5000/api/heatmap/export?${params.toString()}`;
+        const restApiUrl = process.env.REACT_APP_REST_API_URL || "http://localhost:13340";
+        const url = `${restApiUrl}/api/heatmap/export?${params.toString()}`;
         const filename = `${interstateNum}_${startMMInt}_${endMMInt}_${dirCode}_${startD}_${endD}.csv`;
 
         const response = await fetch(url);

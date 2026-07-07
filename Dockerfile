@@ -7,7 +7,18 @@ WORKDIR /app
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
- 
+
+# Build arguments for Cloud Run backend URLs
+ARG REACT_APP_REST_API_URL
+ARG REACT_APP_CAR_API_URL
+ARG REACT_APP_TRUCK_API_URL
+ARG REACT_APP_INRIX_API_URL
+
+ENV REACT_APP_REST_API_URL=$REACT_APP_REST_API_URL
+ENV REACT_APP_CAR_API_URL=$REACT_APP_CAR_API_URL
+ENV REACT_APP_TRUCK_API_URL=$REACT_APP_TRUCK_API_URL
+ENV REACT_APP_INRIX_API_URL=$REACT_APP_INRIX_API_URL
+
 # Copy source code and build
 COPY . .
 RUN npm run build
