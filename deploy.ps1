@@ -1,9 +1,17 @@
 # deploy.ps1
 # PowerShell script to build, push, and deploy tmc-frontend to GCP Cloud Run using local Docker
 
-$ServiceName = "tmc-frontend"
+$ServiceName = "heatmap4f-v4"
+$ImageName = "frontend"
+$ImageTag = "exportupdated"
 $RepositoryName = "tmc-repo"
 $Region = "us-central1"
+$ServiceAccount = "sa-heatmap4@tmc-dashboards.iam.gserviceaccount.com"
+$Cpu = "8"
+$Memory = "16Gi"
+$Concurrency = 80
+$Timeout = 650
+$Port = 80
 
 # Get active GCP Project ID
 Write-Host "Retrieving active Google Cloud project..." -ForegroundColor Cyan
@@ -12,8 +20,7 @@ if ($ProjectId) {
     $ProjectId = $ProjectId.Trim()
 }
 if (-not $ProjectId) {
-    Write-Host "ERROR: No active GCP project configured. Run 'gcloud config set project <PROJECT_ID>' first." -ForegroundColor Red
-    exit 1
+    $ProjectId = "tmc-dashboards"
 }
 Write-Host "Active Project ID: $ProjectId" -ForegroundColor Green
 
@@ -67,7 +74,7 @@ if (-not $InrixHaasApiUrl) { $InrixHaasApiUrl = "https://tmc-backend-inrix-haas-
 
 # Define image URLs
 $RegistryHost = "$Region-docker.pkg.dev"
-$ImageUrl = "$RegistryHost/$ProjectId/$RepositoryName/$ServiceName:latest"
+$ImageUrl = "$RegistryHost/$ProjectId/$RepositoryName/${ImageName}:${ImageTag}"
 
 Write-Host "--------------------------------------------------" -ForegroundColor Gray
 Write-Host "Deploying service: $ServiceName" -ForegroundColor Green
@@ -119,13 +126,25 @@ Write-Host "Docker image pushed successfully!" -ForegroundColor Green
 
 # Step 5: Deploy image to Cloud Run
 Write-Host "Deploying to Cloud Run..." -ForegroundColor Cyan
-$EnvVarsString = "REACT_APP_REST_API_URL=$RestApiUrl,REACT_APP_CAR_API_URL=$CarApiUrl,REACT_APP_TRUCK_API_URL=$TruckApiUrl,REACT_APP_INRIX_API_URL=$InrixApiUrl,REACT_APP_INRIX_HAAS_API_URL=$InrixHaasApiUrl"
+$EnvVarsString = "PROJECT_ID=$ProjectId,API_BASE_URL=https://tmc-backend-607020806390.us-central1.run.app"
+if ($RestApiUrl) { $EnvVarsString += ",REACT_APP_REST_API_URL=$RestApiUrl" }
+if ($CarApiUrl) { $EnvVarsString += ",REACT_APP_CAR_API_URL=$CarApiUrl" }
+if ($TruckApiUrl) { $EnvVarsString += ",REACT_APP_TRUCK_API_URL=$TruckApiUrl" }
+if ($InrixApiUrl) { $EnvVarsString += ",REACT_APP_INRIX_API_URL=$InrixApiUrl" }
+if ($InrixHaasApiUrl) { $EnvVarsString += ",REACT_APP_INRIX_HAAS_API_URL=$InrixHaasApiUrl" }
 
 gcloud run deploy $ServiceName `
   --image $ImageUrl `
   --region $Region `
-  --allow-unauthenticated `
-  --set-env-vars $EnvVarsString
+  --project $ProjectId `
+  --service-account $ServiceAccount `
+  --set-env-vars $EnvVarsString `
+  --port $Port `
+  --cpu $Cpu `
+  --memory $Memory `
+  --concurrency $Concurrency `
+  --timeout $Timeout `
+  --allow-unauthenticated
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Cloud Run deployment failed." -ForegroundColor Red
