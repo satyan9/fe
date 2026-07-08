@@ -9,10 +9,10 @@ COPY package*.json ./
 RUN npm install
 
 # Build arguments for Cloud Run backend URLs
-ARG REACT_APP_REST_API_URL
-ARG REACT_APP_CAR_API_URL
-ARG REACT_APP_TRUCK_API_URL
-ARG REACT_APP_INRIX_API_URL
+ARG REACT_APP_REST_API_URL=PLACEHOLDER_REACT_APP_REST_API_URL
+ARG REACT_APP_CAR_API_URL=PLACEHOLDER_REACT_APP_CAR_API_URL
+ARG REACT_APP_TRUCK_API_URL=PLACEHOLDER_REACT_APP_TRUCK_API_URL
+ARG REACT_APP_INRIX_API_URL=PLACEHOLDER_REACT_APP_INRIX_API_URL
 
 ENV REACT_APP_REST_API_URL=$REACT_APP_REST_API_URL
 ENV REACT_APP_CAR_API_URL=$REACT_APP_CAR_API_URL
@@ -35,6 +35,9 @@ COPY --from=build-stage /app/build /usr/share/nginx/html
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Use a shell script to replace the port in nginx config at runtime
-# This allows Cloud Run to inject the $PORT variable
-CMD ["sh", "-c", "sed -i 's/listen       8080;/listen       '\"$PORT\"';/' /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Run entrypoint script on startup
+ENTRYPOINT ["/entrypoint.sh"]
