@@ -26,17 +26,24 @@ if [ -z "$INRIX_URL" ] || [ "$INRIX_URL" = "PLACEHOLDER_REACT_APP_INRIX_API_URL"
   INRIX_URL="http://localhost:13343"
 fi
 
+INRIX_HAAS_URL="${REACT_APP_INRIX_HAAS_API_URL}"
+if [ -z "$INRIX_HAAS_URL" ] || [ "$INRIX_HAAS_URL" = "PLACEHOLDER_REACT_APP_INRIX_HAAS_API_URL" ]; then
+  INRIX_HAAS_URL="$INRIX_URL"
+fi
+
 # Replace placeholders in the built JS files
 echo "Injecting runtime environment variables..."
 echo "REST_API_URL: $REST_URL"
 echo "CAR_API_URL: $CAR_URL"
 echo "TRUCK_API_URL: $TRUCK_URL"
 echo "INRIX_API_URL: $INRIX_URL"
+echo "INRIX_HAAS_API_URL: $INRIX_HAAS_URL"
 
 find /usr/share/nginx/html -type f -name '*.js' -exec sed -i "s|PLACEHOLDER_REACT_APP_REST_API_URL|$REST_URL|g" {} +
 find /usr/share/nginx/html -type f -name '*.js' -exec sed -i "s|PLACEHOLDER_REACT_APP_CAR_API_URL|$CAR_URL|g" {} +
 find /usr/share/nginx/html -type f -name '*.js' -exec sed -i "s|PLACEHOLDER_REACT_APP_TRUCK_API_URL|$TRUCK_URL|g" {} +
 find /usr/share/nginx/html -type f -name '*.js' -exec sed -i "s|PLACEHOLDER_REACT_APP_INRIX_API_URL|$INRIX_URL|g" {} +
+find /usr/share/nginx/html -type f -name '*.js' -exec sed -i "s|PLACEHOLDER_REACT_APP_INRIX_HAAS_API_URL|$INRIX_HAAS_URL|g" {} +
 
 # Start Nginx
 exec nginx -g "daemon off;"

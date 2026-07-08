@@ -1,0 +1,47 @@
+steps:
+  # Step 1: Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+      - '.'
+
+  # Step 2: Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+
+  # Step 3: Deploy the container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--image'
+      - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+      - '--region'
+      - '$_LOCATION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'REACT_APP_REST_API_URL=$_REACT_APP_REST_API_URL,REACT_APP_CAR_API_URL=$_REACT_APP_CAR_API_URL,REACT_APP_TRUCK_API_URL=$_REACT_APP_TRUCK_API_URL,REACT_APP_INRIX_API_URL=$_REACT_APP_INRIX_API_URL,REACT_APP_INRIX_HAAS_API_URL=$_REACT_APP_INRIX_HAAS_API_URL'
+
+images:
+  - '$_LOCATION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+
+substitutions:
+  _LOCATION: us-central1
+  _REPOSITORY: tmc-repo
+  _SERVICE_NAME: tmc-frontend
+  _REACT_APP_REST_API_URL: 'https://tmc-backend-rest-607020806390.us-central1.run.app'
+  _REACT_APP_CAR_API_URL: 'https://tmc-backend-car-607020806390.us-central1.run.app'
+  _REACT_APP_TRUCK_API_URL: 'https://tmc-backend-truck-iot-607020806390.us-central1.run.app'
+  _REACT_APP_INRIX_API_URL: 'https://tmc-backend-inrix-haas-607020806390.us-central1.run.app'
+  _REACT_APP_INRIX_HAAS_API_URL: 'https://tmc-backend-inrix-haas-607020806390.us-central1.run.app'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
